@@ -1,0 +1,7 @@
+= Russetair Battleship
+
+== Style Guide
+
+Use WebKit style to cope with the extremely long names of the Vulkan API.
+
+Structs follow the `typedef {} CamelCase` convention. All other names are `snake_case`.
