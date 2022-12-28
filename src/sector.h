@@ -6,6 +6,9 @@
 #define SECTOR_SIZE 64
 #define SECTOR_AREA (SECTOR_SIZE * SECTOR_SIZE)
 
+extern ECS_COMPONENT_DECLARE(SectorCoord);
+extern ECS_COMPONENT_DECLARE(SectorHeight);
+
 /// @brief Sector coordinates, which is chunk coordinates / 16
 typedef struct {
     int x, y;

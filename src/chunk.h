@@ -2,6 +2,10 @@
 
 #include <flecs.h>
 
+extern ECS_COMPONENT_DECLARE(ChunkCoord);
+extern ECS_COMPONENT_DECLARE(ChunkHeight);
+extern ECS_COMPONENT_DECLARE(TileHeights);
+
 /// @brief Number of tiles per edge of a chunk
 #define CHUNK_SIZE 16
 #define CHUNK_AREA (CHUNK_SIZE * CHUNK_SIZE)

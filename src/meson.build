@@ -4,4 +4,5 @@ src = files(
     'chunk.c',
     'sector.c',
     'graphics.c',
+    'vk/vk.c',
 )

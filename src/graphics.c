@@ -1,64 +1,54 @@
 #include "graphics.h"
 
-#include <vulkan/vulkan.h>
+#include <SDL.h>
+#include <SDL_vulkan.h>
 
-/// @brief Declare a Vulkan object as ECS component, along with its creation info.
-#define VK_OBJECT_DECLARE(id)  \
-    ECS_COMPONENT_DECLARE(id); \
-    ECS_COMPONENT_DECLARE(id##CreateInfo)
-/// @brief Like `VK_OBJECT_DECLARE`, but applies extension suffix after id.
-#define VK_OBJECT_DECLARE_EXT(id, ext) \
-    ECS_COMPONENT_DECLARE(id##ext);    \
-    ECS_COMPONENT_DECLARE(id##CreateInfo##ext)
+#include "vk/vk.h"
 
-/// @brief Register Vulkan object component
-#define VK_OBJECT_DEFINE(ecs, id)  \
-    ECS_COMPONENT_DEFINE(ecs, id); \
-    ECS_COMPONENT_DEFINE(ecs, id##CreateInfo)
-#define VK_OBJECT_DEFINE_EXT(ecs, id, ext) \
-    ECS_COMPONENT_DEFINE(ecs, id##ext);    \
-    ECS_COMPONENT_DEFINE(ecs, id##CreateInfo##ext)
+extern const char* PROJECT_NAME;
 
-// Vulkan objects
-VK_OBJECT_DECLARE(VkInstance);
-ECS_COMPONENT_DECLARE(VkPhysicalDevice);
-VK_OBJECT_DECLARE(VkDevice);
-ECS_COMPONENT_DECLARE(VkQueue);
+typedef SDL_Window* SDLWindowPtr;
 
-ECS_COMPONENT_DECLARE(VkSurfaceKHR);
-VK_OBJECT_DECLARE(VkImageView);
-VK_OBJECT_DECLARE(VkFramebuffer);
-
-ECS_COMPONENT_DECLARE(VkPipeline);
-ECS_COMPONENT_DECLARE(VkComputePipelineCreateInfo);
-ECS_COMPONENT_DECLARE(VkGraphicsPipelineCreateInfo);
-VK_OBJECT_DECLARE(VkRenderPass);
-VK_OBJECT_DECLARE(VkDescriptorSetLayout);
-VK_OBJECT_DECLARE(VkShaderModule);
-
-VK_OBJECT_DECLARE(VkCommandPool);
-
-VK_OBJECT_DECLARE_EXT(VkSwapchain, KHR);
+ECS_DECLARE(GraphicsSystem);
+ECS_COMPONENT_DECLARE(SDLWindowPtr);
 
 void graphics_register(ecs_world_t* ecs)
 {
-    VK_OBJECT_DEFINE(ecs, VkInstance);
-    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
-    VK_OBJECT_DEFINE(ecs, VkDevice);
-    ECS_COMPONENT_DEFINE(ecs, VkQueue);
+    ECS_TAG_DEFINE(ecs, GraphicsSystem);
+    ECS_COMPONENT_DEFINE(ecs, SDLWindowPtr);
+    vk_register(ecs);
+}
 
-    ECS_COMPONENT_DEFINE(ecs, VkSurfaceKHR);
-    VK_OBJECT_DEFINE(ecs, VkImageView);
-    VK_OBJECT_DEFINE(ecs, VkFramebuffer);
+ecs_entity_t graphics_system_create(ecs_world_t* ecs)
+{
+    SDL_Init(SDL_INIT_EVERYTHING);
+    ecs_entity_t e = ecs_new_id(ecs);
 
-    ECS_COMPONENT_DEFINE(ecs, VkPipeline);
-    ECS_COMPONENT_DEFINE(ecs, VkComputePipelineCreateInfo);
-    ECS_COMPONENT_DEFINE(ecs, VkGraphicsPipelineCreateInfo);
-    VK_OBJECT_DEFINE(ecs, VkRenderPass);
-    VK_OBJECT_DEFINE(ecs, VkDescriptorSetLayout);
-    VK_OBJECT_DEFINE(ecs, VkShaderModule);
+    ecs_add(ecs, e, GraphicsSystem);
 
-    VK_OBJECT_DEFINE(ecs, VkCommandPool);
+    SDLWindowPtr* window_p = ecs_emplace(ecs, e, SDLWindowPtr);
+    uint32_t n_extensions;
+    const char** extensions = NULL;
+    *window_p = SDL_CreateWindow(
+        PROJECT_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        1280, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN /* FIXME Hide until we can draw something */);
+    if (!*window_p) {
+        ecs_fatal("SDL init failed: %s", SDL_GetError());
+        exit(1);
+    }
 
-    VK_OBJECT_DEFINE_EXT(ecs, VkSwapchain, KHR);
+    if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, NULL)) {
+        ecs_fatal("Failed to get number of required extensions: %s", SDL_GetError());
+        exit(1);
+    }
+    extensions = malloc(sizeof(const char*) * n_extensions);
+    if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, extensions)) {
+        ecs_fatal("Failed to get required extensions: %s", SDL_GetError());
+        exit(1);
+    }
+    ecs_entity_t instance = vk_create_instance(ecs, extensions, n_extensions);
+    ecs_add_pair(ecs, instance, EcsChildOf, e);
+
+    free(extensions);
+    return e;
 }
