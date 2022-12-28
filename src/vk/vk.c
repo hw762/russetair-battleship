@@ -1,12 +1,16 @@
 #include "vk.h"
 
-#include <stb_ds.h>
+#include <stb/stb_ds.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
+
+#include "device.h"
+#include "instance.h"
 
 ECS_DECLARE(VulkanInstance);
 ECS_COMPONENT_DECLARE(VkInstance);
 ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
+
 ECS_COMPONENT_DECLARE(VkPhysicalDevice);
 ECS_COMPONENT_DECLARE(VkDevice);
 ECS_COMPONENT_DECLARE(VkQueue);
@@ -49,4 +53,24 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkCommandPool);
 
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
+}
+
+ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
+    const char** extensions, uint32_t n_extensions)
+{
+    ecs_trace("Creating Vulkan Instance");
+    ecs_log_push();
+    ecs_entity_t e = ecs_new_id(ecs);
+    ecs_add(ecs, e, VulkanInstance);
+    // Create VkInstance, adding compatibility extension
+    VkInstance instance = _VkInstance(extensions, n_extensions);
+    ecs_set_ptr(ecs, e, VkInstance, &instance);
+    // Setup messenger
+    VkDebugUtilsMessengerEXT messenger = _VkDebugUtilsMessengerEXT(instance);
+    ecs_set_ptr(ecs, e, VkDebugUtilsMessengerEXT, &messenger);
+    // Select physical device
+    VkPhysicalDevice physDev = _VkPhysicalDevice(instance);
+    ecs_set_ptr(ecs, e, VkPhysicalDevice, &physDev);
+    ecs_log_pop();
+    return e;
 }

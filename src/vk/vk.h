@@ -2,10 +2,13 @@
 
 #include <flecs.h>
 
+#define vkCheck(stmt) if ((stmt) != VK_SUCCESS)
+
 // Instance
-extern ECS_COMPONENT_DECLARE(VulkanInstance);
 extern ECS_COMPONENT_DECLARE(VkInstance);
 extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
+
+// Device
 extern ECS_COMPONENT_DECLARE(VkPhysicalDevice);
 extern ECS_COMPONENT_DECLARE(VkDevice);
 extern ECS_COMPONENT_DECLARE(VkQueue);

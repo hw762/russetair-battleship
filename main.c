@@ -34,10 +34,10 @@ int main()
     ecs_log_set_level(0);
 
     createGraphicsSystem(game.ecs);
-    spawnSector(game.ecs, 0, 0, 0, &spawnChunkDefault);
-    spawnSector(game.ecs, 0, 1, 0, &spawnChunk);
-    spawnSector(game.ecs, 1, 0, 0, NULL);
-    spawnSector(game.ecs, 1, 1, 0, NULL);
+    // spawnSector(game.ecs, 0, 0, 0, &spawnChunkDefault);
+    // spawnSector(game.ecs, 0, 1, 0, &spawnChunk);
+    // spawnSector(game.ecs, 1, 0, 0, NULL);
+    // spawnSector(game.ecs, 1, 1, 0, NULL);
 
     cleanupGame(&game);
 }

@@ -33,7 +33,7 @@ thirdparty_src = files(
 
 src_inc = include_directories('src')
 thirdparty_inc = include_directories([
-  'thirdparty/stb',
+  'thirdparty/',
   'thirdparty/flecs',
 ])
 

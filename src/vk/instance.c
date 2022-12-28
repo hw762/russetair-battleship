@@ -1,27 +1,12 @@
+#include "instance.h"
 #include "vk.h"
 
-#include <stb_ds.h>
+#include <stb/stb_ds.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 
 extern const char* PROJECT_NAME;
 extern const char* ENGINE_NAME;
-
-static VkInstance _VkInstance(ecs_world_t* ecs, ecs_entity_t entity, const char** extensions, uint32_t n_extensions);
-
-ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
-    const char** extensions, uint32_t n_extensions)
-{
-    ecs_trace("Creating Vulkan Instance");
-    ecs_log_push();
-    ecs_entity_t e = ecs_new_id(ecs);
-    ecs_add(ecs, e, VulkanInstance);
-    // Create VkInstance, adding compatibility extension
-    VkInstance instance = _VkInstance(ecs, e, extensions, n_extensions);
-    // Set up validation layer
-    ecs_log_pop();
-    return e;
-}
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL _vkDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -40,10 +25,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL _vkDebugCallback(
         ecs_warn(fmt, pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        ecs_trace(fmt, pCallbackData->pMessage);
+        // Info is too verbose for normal builds
+        ecs_dbg(fmt, pCallbackData->pMessage);
         break;
     default:
-        ecs_dbg(fmt, pCallbackData->pMessage);
+        // Anything else gets even lower level
+        ecs_dbg_2(fmt, pCallbackData->pMessage);
         break;
     }
     return VK_FALSE;
@@ -105,36 +92,43 @@ static const char** _getValidationLayers()
     return layers;
 }
 
-static void
-_setupDebugUtilsMessenger(ecs_world_t* ecs, ecs_entity_t entity, VkInstance instance)
+static const char**
+_getRequiredExtensions(const char** sdl_exts, uint32_t n_sdl_exts)
 {
+    const char** extensions = NULL;
+    arrsetlen(extensions, n_sdl_exts);
+    memcpy(extensions, sdl_exts, sizeof(*extensions) * n_sdl_exts);
+    arrput(extensions, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    arrput(extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    return extensions;
+}
+
+VkDebugUtilsMessengerEXT _VkDebugUtilsMessengerEXT(VkInstance instance)
+{
+    ecs_trace("Setting up messenger.");
+    ecs_log_push();
     PFN_vkCreateDebugUtilsMessengerEXT create = (PFN_vkCreateDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(
             instance,
             "vkCreateDebugUtilsMessengerEXT");
     if (!create) {
-        ecs_fatal("Failed to load debug extension");
+        ecs_fatal("Failed to load debug extension.");
         exit(1);
     }
-    VkDebugUtilsMessengerEXT*
-        messenger
-        = ecs_emplace(ecs, entity, VkDebugUtilsMessengerEXT);
-    if (create(instance, &_debug_utils_messenger_create_info_ext, NULL, messenger) != VK_SUCCESS) {
-        ecs_fatal("Failed to create debug messenger");
+    VkDebugUtilsMessengerEXT messenger;
+    if (create(instance, &_debug_utils_messenger_create_info_ext, NULL, &messenger) != VK_SUCCESS) {
+        ecs_fatal("Failed to create debug messenger.");
         exit(1);
     }
+    ecs_trace("Done setting up messenger.");
+    ecs_log_pop();
+    return messenger;
 }
 
-static VkInstance _VkInstance(ecs_world_t* ecs, ecs_entity_t entity,
-    const char** sdl_exts, uint32_t n_sdl_exts)
+VkInstance _VkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
 {
-    ecs_trace("Creating VkInstance");
+    ecs_trace("Creating VkInstance.");
     ecs_log_push();
-    const char** extensions = NULL;
-    arrsetcap(extensions, n_sdl_exts + 2);
-    memcpy(extensions, sdl_exts, sizeof(*extensions) * n_sdl_exts);
-    arrput(extensions, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    arrput(extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     VkApplicationInfo app_info
         = {
               .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -145,6 +139,7 @@ static VkInstance _VkInstance(ecs_world_t* ecs, ecs_entity_t entity,
               .apiVersion = VK_API_VERSION_1_3,
           };
     // FIXME allow turning off validation
+    const char** extensions = _getRequiredExtensions(sdl_exts, n_sdl_exts);
     const char** layers = _getValidationLayers();
     VkInstanceCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -156,16 +151,15 @@ static VkInstance _VkInstance(ecs_world_t* ecs, ecs_entity_t entity,
         .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
         .pNext = &_debug_utils_messenger_create_info_ext
     };
-    VkInstance* pInstance = ecs_emplace(ecs, entity, VkInstance);
-    VkResult res = vkCreateInstance(&ci, NULL, pInstance);
-    if (res != VK_SUCCESS) {
-        ecs_fatal("Failed to created Vulkan instance: %d", res);
+    VkInstance instance;
+    vkCheck(vkCreateInstance(&ci, NULL, &instance))
+    {
+        ecs_fatal("Failed to created Vulkan instance.");
         exit(1);
     }
     arrfree(extensions);
     arrfree(layers);
-    _setupDebugUtilsMessenger(ecs, entity, *pInstance);
-    ecs_trace("Done creating VkInstance");
+    ecs_trace("Done creating VkInstance.");
     ecs_log_pop();
-    return *pInstance;
+    return instance;
 }
