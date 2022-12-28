@@ -25,7 +25,7 @@ typedef struct {
     float heights[CHUNK_AREA];
 } TileHeights;
 
-void chunk_register(ecs_world_t* ecs);
+void registerChunk(ecs_world_t* ecs);
 
 /// @brief Spawn a new chunk with all its tiles set to default height
 /// @param ecs
@@ -33,7 +33,7 @@ void chunk_register(ecs_world_t* ecs);
 /// @param y Chunk coordinate Y
 /// @param h Chunk height
 /// @return Chunk ID
-ecs_entity_t chunk_spawn_default(ecs_world_t* ecs, int x, int y, float h);
+ecs_entity_t spawnChunkDefault(ecs_world_t* ecs, int x, int y, float h);
 
 /// @brief Spawn a new chunk without its tiles
 /// @param ecs
@@ -41,4 +41,4 @@ ecs_entity_t chunk_spawn_default(ecs_world_t* ecs, int x, int y, float h);
 /// @param y
 /// @param h
 /// @return Chunk ID
-ecs_entity_t chunk_spawn(ecs_world_t* ecs, int x, int y, float h);
+ecs_entity_t spawnChunk(ecs_world_t* ecs, int x, int y, float h);

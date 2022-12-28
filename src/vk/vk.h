@@ -25,10 +25,10 @@ extern ECS_COMPONENT_DECLARE(VkCommandPool);
 
 extern ECS_COMPONENT_DECLARE(VkSwapchainKHR);
 
-void vk_register(ecs_world_t* ecs);
+void registerVulkan(ecs_world_t* ecs);
 
 /// @brief Create a Vulkan instance, select physical device, and create logical device.
 /// @param ecs
 /// @return
-ecs_entity_t vk_create_instance(ecs_world_t* ecs,
+ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions);

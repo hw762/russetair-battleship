@@ -19,7 +19,7 @@ typedef struct {
     float h;
 } SectorHeight;
 
-void sector_register(ecs_world_t* ecs);
+void registerSector(ecs_world_t* ecs);
 
 /// @brief Spawn a sector
 /// @param ecs
@@ -28,5 +28,5 @@ void sector_register(ecs_world_t* ecs);
 /// @param h Sector height
 /// @param chunk_spawner Chunk spawn function. If NULL, chunks are not spawned
 /// @return Sector ID
-ecs_entity_t sector_spawn(ecs_world_t* ecs, int x, int y, float h,
+ecs_entity_t spawnSector(ecs_world_t* ecs, int x, int y, float h,
     ecs_entity_t (*chunk_spawner)(ecs_world_t*, int, int, float));

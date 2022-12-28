@@ -29,7 +29,7 @@ ECS_COMPONENT_DECLARE(VkCommandPool);
 
 ECS_COMPONENT_DECLARE(VkSwapchainKHR);
 
-void vk_register(ecs_world_t* ecs)
+void registerVulkan(ecs_world_t* ecs)
 {
     ECS_TAG_DEFINE(ecs, VulkanInstance);
     ECS_COMPONENT_DEFINE(ecs, VkInstance);
@@ -54,9 +54,9 @@ void vk_register(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
 }
 
-static VkInstance _vkInstance(ecs_world_t* ecs, ecs_entity_t entity, const char** extensions, uint32_t n_extensions);
+static VkInstance _VkInstance(ecs_world_t* ecs, ecs_entity_t entity, const char** extensions, uint32_t n_extensions);
 
-ecs_entity_t vk_create_instance(ecs_world_t* ecs,
+ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions)
 {
     ecs_trace("Creating Vulkan Instance");
@@ -64,13 +64,13 @@ ecs_entity_t vk_create_instance(ecs_world_t* ecs,
     ecs_entity_t e = ecs_new_id(ecs);
     ecs_add(ecs, e, VulkanInstance);
     // Create VkInstance, adding compatibility extension
-    VkInstance instance = _vkInstance(ecs, e, extensions, n_extensions);
+    VkInstance instance = _VkInstance(ecs, e, extensions, n_extensions);
     // Set up validation layer
     ecs_log_pop();
     return e;
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL _vk_debug_callback(
+static VKAPI_ATTR VkBool32 VKAPI_CALL _vkDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -100,11 +100,11 @@ static VkDebugUtilsMessengerCreateInfoEXT _debug_utils_messenger_create_info_ext
     .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
     .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
     .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-    .pfnUserCallback = _vk_debug_callback,
+    .pfnUserCallback = _vkDebugCallback,
     .pUserData = NULL,
 };
 
-static const char** _vk_get_validation_layers()
+static const char** _getValidationLayers()
 {
     const char** layers = NULL;
     uint32_t count;
@@ -172,7 +172,7 @@ _setupDebugUtilsMessenger(ecs_world_t* ecs, ecs_entity_t entity, VkInstance inst
     }
 }
 
-static VkInstance _vkInstance(ecs_world_t* ecs, ecs_entity_t entity,
+static VkInstance _VkInstance(ecs_world_t* ecs, ecs_entity_t entity,
     const char** sdl_exts, uint32_t n_sdl_exts)
 {
     ecs_trace("Creating VkInstance");
@@ -192,7 +192,7 @@ static VkInstance _vkInstance(ecs_world_t* ecs, ecs_entity_t entity,
               .apiVersion = VK_API_VERSION_1_3,
           };
     // FIXME allow turning off validation
-    const char** layers = _vk_get_validation_layers();
+    const char** layers = _getValidationLayers();
     VkInstanceCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pApplicationInfo = &app_info,

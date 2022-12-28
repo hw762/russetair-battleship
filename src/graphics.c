@@ -12,14 +12,14 @@ typedef SDL_Window* SDLWindowPtr;
 ECS_DECLARE(GraphicsSystem);
 ECS_COMPONENT_DECLARE(SDLWindowPtr);
 
-void graphics_register(ecs_world_t* ecs)
+void registerGraphics(ecs_world_t* ecs)
 {
     ECS_TAG_DEFINE(ecs, GraphicsSystem);
     ECS_COMPONENT_DEFINE(ecs, SDLWindowPtr);
-    vk_register(ecs);
+    registerVulkan(ecs);
 }
 
-ecs_entity_t graphics_system_create(ecs_world_t* ecs)
+ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
 {
     SDL_Init(SDL_INIT_EVERYTHING);
     ecs_entity_t e = ecs_new_id(ecs);
@@ -46,7 +46,7 @@ ecs_entity_t graphics_system_create(ecs_world_t* ecs)
         ecs_fatal("Failed to get required extensions: %s", SDL_GetError());
         exit(1);
     }
-    ecs_entity_t instance = vk_create_instance(ecs, extensions, n_extensions);
+    ecs_entity_t instance = createVulkanInstance(ecs, extensions, n_extensions);
     ecs_add_pair(ecs, instance, EcsChildOf, e);
 
     free(extensions);

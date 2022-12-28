@@ -9,35 +9,35 @@ const char* ENGINE_NAME = "PotatoEngine";
 #include "graphics.h"
 #include "sector.h"
 
-struct game {
+typedef struct {
     ecs_world_t* ecs;
-};
+} Game;
 
-void game_init(struct game* game)
+void gameInit(Game* game)
 {
     game->ecs = ecs_init();
-    graphics_register(game->ecs);
-    sector_register(game->ecs);
-    chunk_register(game->ecs);
+    registerGraphics(game->ecs);
+    registerSector(game->ecs);
+    registerChunk(game->ecs);
 }
 
-void game_destroy(struct game* game)
+void cleanupGame(Game* game)
 {
     ecs_fini(game->ecs);
 }
 
 int main()
 {
-    struct game game;
-    game_init(&game);
+    Game game;
+    gameInit(&game);
 
     ecs_log_set_level(0);
 
-    graphics_system_create(game.ecs);
-    sector_spawn(game.ecs, 0, 0, 0, &chunk_spawn_default);
-    sector_spawn(game.ecs, 0, 1, 0, &chunk_spawn);
-    sector_spawn(game.ecs, 1, 0, 0, NULL);
-    sector_spawn(game.ecs, 1, 1, 0, NULL);
+    createGraphicsSystem(game.ecs);
+    spawnSector(game.ecs, 0, 0, 0, &spawnChunkDefault);
+    spawnSector(game.ecs, 0, 1, 0, &spawnChunk);
+    spawnSector(game.ecs, 1, 0, 0, NULL);
+    spawnSector(game.ecs, 1, 1, 0, NULL);
 
-    game_destroy(&game);
+    cleanupGame(&game);
 }

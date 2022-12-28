@@ -3,13 +3,13 @@
 ECS_COMPONENT_DECLARE(SectorCoord);
 ECS_COMPONENT_DECLARE(SectorHeight);
 
-void sector_register(ecs_world_t* ecs)
+void registerSector(ecs_world_t* ecs)
 {
     ECS_COMPONENT_DEFINE(ecs, SectorCoord);
     ECS_COMPONENT_DEFINE(ecs, SectorHeight);
 }
 
-ecs_entity_t sector_spawn(ecs_world_t* ecs, int x, int y, float h, ecs_entity_t (*chunk_spawner)(ecs_world_t*, int, int, float))
+ecs_entity_t spawnSector(ecs_world_t* ecs, int x, int y, float h, ecs_entity_t (*chunk_spawner)(ecs_world_t*, int, int, float))
 {
     ecs_trace("Spawning sector [%d, %d, %f]", x, y, h);
     ecs_entity_t e = ecs_new_id(ecs);

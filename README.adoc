@@ -7,6 +7,8 @@
 
 == Style Guide
 
-Use WebKit style to cope with the extremely long names of the Vulkan API.
+Use WebKit style to cope with the extremely long names of the Vulkan API. Structs follow the `typedef {} CamelCase` convention for the above reason and for compatibility with flecs.
 
-Structs follow the `typedef {} CamelCase` convention. All other names are `snake_case`.
+All identifiers use `camelCase`, while data types use `PascalCase`. What act as a constructor follow `_PascalCase` or `newPascalCase`. Private identifiers start with underscore.
+
+ECS entities start with `spawnEntityName` and end with `cleanupEntityName`. What would essentially be singleton are created with `createEntityName` instead.
