@@ -1,5 +1,6 @@
 src = files(
-    'tiles.c',
+    'spatial.c',   
     'player.c',
-    'spatial.c',
+    'chunk.c',
+    'sector.c',
 )

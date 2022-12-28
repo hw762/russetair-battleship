@@ -5,16 +5,18 @@ project('russetair-battleship', 'c',
 add_global_arguments([
   '-Werror=discarded-qualifiers', 
   '-Werror=incompatible-pointer-types',
-  '-Werror=uninitialized'
+  '-Werror=uninitialized',
+  '-Werror=return-type'
   ], language: 'c')
 
 cmake = import('cmake')
 
-# Vulkan
+# Graphics
 vulkan_dep = dependency('vulkan')
-
-# SDL2
 sdl2_dep = dependency('sdl2')
+cglm_dep = dependency('cglm')
+
+gfx_deps = [vulkan_dep, sdl2_dep, cglm_dep]
 
 # Assimp model loader
 assimp_dep = dependency('assimp')
@@ -36,7 +38,11 @@ exe = executable('c_battleship', [
     src,
     thirdparty_src
   ],
-  dependencies : [vulkan_dep, sdl2_dep, sqlite3_dep],
+  dependencies : [
+    gfx_deps,
+    assimp_dep,
+    sqlite3_dep,
+  ],
   include_directories : [
     src_inc,
     thirdparty_inc
