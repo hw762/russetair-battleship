@@ -5,10 +5,12 @@
 // Instance
 extern ECS_COMPONENT_DECLARE(VulkanInstance);
 extern ECS_COMPONENT_DECLARE(VkInstance);
+extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDevice);
 extern ECS_COMPONENT_DECLARE(VkDevice);
 extern ECS_COMPONENT_DECLARE(VkQueue);
 
+// Surface
 extern ECS_COMPONENT_DECLARE(VkSurfaceKHR);
 extern ECS_COMPONENT_DECLARE(VkImageView);
 extern ECS_COMPONENT_DECLARE(VkFramebuffer);
