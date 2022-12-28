@@ -3,4 +3,5 @@ src = files(
     'player.c',
     'chunk.c',
     'sector.c',
+    'graphics.c',
 )

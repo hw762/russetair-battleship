@@ -1,5 +1,10 @@
 = Russetair Battleship
 
+== Roadmap
+
+- [ ] Sector and chunk 2D debugger
+- [ ] Terrain 3D and spectator
+
 == Style Guide
 
 Use WebKit style to cope with the extremely long names of the Vulkan API.
