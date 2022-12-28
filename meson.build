@@ -28,10 +28,14 @@ subdir('src')
 
 thirdparty_src = files(
   'thirdparty/flecs/flecs.c',
+  'thirdparty/stb/stb_ds.c',
 )
 
 src_inc = include_directories('src')
-thirdparty_inc = include_directories(['thirdparty/flecs'])
+thirdparty_inc = include_directories([
+  'thirdparty/stb',
+  'thirdparty/flecs',
+])
 
 exe = executable('c_battleship', [
     'main.c', 
