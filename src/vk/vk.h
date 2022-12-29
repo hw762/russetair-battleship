@@ -11,18 +11,20 @@ extern ECS_DECLARE(VulkanSystem);
 extern ECS_COMPONENT_DECLARE(VkInstance);
 extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 
-// Device
-extern ECS_COMPONENT_DECLARE(VkPhysicalDevice);
-extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
+// Physical device
+typedef VkPhysicalDevice SelectedPhysicalDevice;
 typedef VkExtensionProperties* VkExtensionPropertiesArr;
-extern ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
 typedef VkQueueFamilyProperties* VkQueueFamilyPropertiesArr;
+
+extern ECS_COMPONENT_DECLARE(VkPhysicalDevice);
+extern ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
+extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
+extern ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
 extern ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
-typedef VkPhysicalDevice SelectedPhysicalDevice;
-extern ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
 
+// Logical device
 extern ECS_COMPONENT_DECLARE(VkDevice);
 extern ECS_COMPONENT_DECLARE(VkQueue);
 
