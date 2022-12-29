@@ -142,7 +142,6 @@ void _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
 
 ////// The constructor
 
-// TODO: maybe make this an entity
 void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
     VkInstance instance)
 {
