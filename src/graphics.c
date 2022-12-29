@@ -46,7 +46,7 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         ecs_fatal("Failed to get required extensions: %s", SDL_GetError());
         exit(1);
     }
-    ecs_entity_t instance = createVulkanInstance(ecs, extensions, n_extensions);
+    ecs_entity_t instance = spawnVulkanSystem(ecs, extensions, n_extensions);
     ecs_add_pair(ecs, instance, EcsChildOf, e);
 
     free(extensions);

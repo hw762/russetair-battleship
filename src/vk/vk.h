@@ -49,6 +49,6 @@ void registerVulkan(ecs_world_t* ecs);
 
 /// @brief Create a Vulkan instance, select physical device, and create logical device.
 /// @param ecs
-/// @return
-ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
+/// @return Vulkan system
+ecs_entity_t spawnVulkanSystem(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions);

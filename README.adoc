@@ -6,7 +6,7 @@ Use WebKit style to cope with the extremely long names of the Vulkan API. Struct
 
 All identifiers use `camelCase`, while data types use `PascalCase`. What act as a constructor follow `_PascalCase` or `newPascalCase`. Private identifiers start with underscore.
 
-ECS entities start with `spawnEntityName` and end with `cleanupEntityName`. What would essentially be singleton are created with `createEntityName` instead.
+ECS entities start with `spawnEntityName` and end with `cleanupEntityName`.
 
 == Roadmap
 

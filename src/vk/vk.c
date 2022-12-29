@@ -73,7 +73,7 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
 }
 
-ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
+ecs_entity_t spawnVulkanSystem(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions)
 {
     ecs_trace("Creating Vulkan Instance");
