@@ -4,6 +4,8 @@
 
 #define vkCheck(stmt) if ((stmt) != VK_SUCCESS)
 
+extern ECS_DECLARE(VulkanSystem);
+
 // Instance
 extern ECS_COMPONENT_DECLARE(VkInstance);
 extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);

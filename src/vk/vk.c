@@ -7,7 +7,7 @@
 #include "device.h"
 #include "instance.h"
 
-ECS_DECLARE(VulkanInstance);
+ECS_DECLARE(VulkanSystem);
 ECS_COMPONENT_DECLARE(VkInstance);
 ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 
@@ -32,7 +32,7 @@ ECS_COMPONENT_DECLARE(VkSwapchainKHR);
 
 void registerVulkan(ecs_world_t* ecs)
 {
-    ECS_TAG_DEFINE(ecs, VulkanInstance);
+    ECS_TAG_DEFINE(ecs, VulkanSystem);
     ECS_COMPONENT_DEFINE(ecs, VkInstance);
     ECS_COMPONENT_DEFINE(ecs, VkDebugUtilsMessengerEXT);
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
@@ -61,7 +61,7 @@ ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
     ecs_trace("Creating Vulkan Instance");
     ecs_log_push();
     ecs_entity_t e = ecs_new_id(ecs);
-    ecs_add(ecs, e, VulkanInstance);
+    ecs_add(ecs, e, VulkanSystem);
     // Create VkInstance, adding compatibility extension
     VkInstance instance = _VkInstance(extensions, n_extensions);
     ecs_set_ptr(ecs, e, VkInstance, &instance);
