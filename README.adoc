@@ -1,18 +1,5 @@
 = Russetair Battleship
 
-== Roadmap
-
-- [ ] Sector and chunk 2D debugger
-- [ ] Terrain 3D and spectator
-
-== Vulkan Roadmap
-
-- [x] Creates instance
-- [x] Enumerates physical devices and store as entities
-- [ ] Select best device
-- [ ] Create logical device
-- [ ] Proper cleanup
-
 == Style Guide
 
 Use WebKit style to cope with the extremely long names of the Vulkan API. Structs follow the `typedef {} CamelCase` convention for the above reason and for compatibility with flecs.
@@ -20,3 +7,38 @@ Use WebKit style to cope with the extremely long names of the Vulkan API. Struct
 All identifiers use `camelCase`, while data types use `PascalCase`. What act as a constructor follow `_PascalCase` or `newPascalCase`. Private identifiers start with underscore.
 
 ECS entities start with `spawnEntityName` and end with `cleanupEntityName`. What would essentially be singleton are created with `createEntityName` instead.
+
+== Roadmap
+
+- [ ] Vulkan draw anything
+- [ ] Sector and chunk 2D debugger
+- [ ] Terrain 3D and spectator
+
+=== Vulkan
+
+- [x] Creates instance
+- [x] Enumerates physical devices and store as entities
+- [ ] Create logical device
+- [ ] Swap chain creation
+- [ ] Clear screen render pass
+- [ ] Triangle
+- [ ] Select best device instead of first device
+- [ ] Proper cleanup
+
+=== 2D Debugger
+
+- [ ] Just make a separate render pass
+- [ ] Add MVP transform (after 3D)
+
+=== Terrain and Spectator
+
+- [ ] Render terrain with displacement
+- [ ] Spectator control and camera movement
+- [ ] 2D debugger overlay
+- [ ] Terrain texture and material
+- [ ] Terrain load from SQLite3 file
+
+=== Models
+
+- [ ] gltf model loading
+- [ ] Player control
