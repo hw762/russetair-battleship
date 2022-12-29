@@ -118,7 +118,7 @@ void _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
               { ecs_id(VkPhysicalDeviceProperties) },
               { ecs_id(VkExtensionPropertiesArr) },
               { ecs_id(VkQueueFamilyPropertiesArr) },
-              //   { ecs_pair(EcsChildOf, system) },
+              { ecs_pair(EcsChildOf, system) },
           } });
     ecs_iter_t it = ecs_filter_iter(ecs, f);
     while (ecs_filter_next(&it)) {
