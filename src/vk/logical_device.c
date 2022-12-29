@@ -20,9 +20,14 @@ ecs_entity_t _spawnLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity
     int nQueues = arrlen(queueProps);
 
     VkDeviceQueueCreateInfo queueCI[nQueues];
+    float** ppPriorities = NULL;
+    arrsetlen(ppPriorities, nQueues);
     for (int i = 0; i < nQueues; ++i) {
-        float priorities[queueProps[i].queueCount];
-        memset(priorities, 0, sizeof(priorities));
+        VkQueueFamilyProperties prop = queueProps[i];
+        ppPriorities[i] = NULL;
+        arrsetlen(ppPriorities, prop.queueCount);
+        float* priorities = ppPriorities[i];
+        memset(priorities, 0, sizeof(*priorities) * prop.queueCount);
         queueCI[i]
             = (VkDeviceQueueCreateInfo) {
                   .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -49,5 +54,9 @@ ecs_entity_t _spawnLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity
     ecs_set_ptr(ecs, e, VkDevice, &device);
     ecs_add_pair(ecs, e, EcsChildOf, physDeviceEntity);
     ecs_log_pop();
+    for (int i = 0; i < nQueues; ++i) {
+        arrfree(ppPriorities[i]);
+    }
+    arrfree(ppPriorities);
     return e;
 }

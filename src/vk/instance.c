@@ -57,7 +57,7 @@ static const char** _getValidationLayers()
         exit(1);
     }
     for (uint32_t i = 0; i < count; ++i) {
-        ecs_trace("Supported layer [%s]: %s", props[i].layerName, props[i].description);
+        ecs_trace("Supported validation layer [%s]: %s", props[i].layerName, props[i].description);
     }
     for (uint32_t i = 0; i < count; ++i) {
         const char* layer = props[i].layerName;
