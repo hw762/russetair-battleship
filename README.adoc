@@ -5,6 +5,13 @@
 - [ ] Sector and chunk 2D debugger
 - [ ] Terrain 3D and spectator
 
+== Vulkan Roadmap
+
+- [x] Creates instance
+- [x] Enumerates physical devices and store as entities
+- [ ] Select best device
+- [ ] Create logical device
+
 == Style Guide
 
 Use WebKit style to cope with the extremely long names of the Vulkan API. Structs follow the `typedef {} CamelCase` convention for the above reason and for compatibility with flecs.
