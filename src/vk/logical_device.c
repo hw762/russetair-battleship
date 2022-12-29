@@ -9,7 +9,7 @@ static const char* _requiredExtensions[] = {
 
 /* The constructor */
 
-ecs_entity_t _spawnLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
+ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
 {
     ecs_trace("Spawning VkLogicalDevice entities.");
     ecs_log_push();

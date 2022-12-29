@@ -73,7 +73,7 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
 }
 
-ecs_entity_t spawnVulkanSystem(ecs_world_t* ecs,
+ecs_entity_t createVulkanSystem(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions)
 {
     ecs_trace("Creating Vulkan Instance");
@@ -91,7 +91,7 @@ ecs_entity_t spawnVulkanSystem(ecs_world_t* ecs,
     // Choose the best one
     ecs_entity_t physDevice = _selectPhysicalDevice(ecs, e);
     // Create logical device
-    ecs_entity_t logicalDevice = _spawnLogicalDevice(ecs, physDevice);
+    ecs_entity_t logicalDevice = _createLogicalDevice(ecs, physDevice);
     ecs_log_pop();
     return e;
 }
