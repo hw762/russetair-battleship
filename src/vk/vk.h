@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flecs.h>
+#include <vulkan/vulkan.h>
 
 #define vkCheck(stmt) if ((stmt) != VK_SUCCESS)
 
@@ -12,6 +13,14 @@ extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 
 // Device
 extern ECS_COMPONENT_DECLARE(VkPhysicalDevice);
+extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
+typedef VkExtensionProperties* VkExtensionPropertiesArr;
+extern ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
+typedef VkQueueFamilyProperties* VkQueueFamilyPropertiesArr;
+extern ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
+extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
+extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
+
 extern ECS_COMPONENT_DECLARE(VkDevice);
 extern ECS_COMPONENT_DECLARE(VkQueue);
 

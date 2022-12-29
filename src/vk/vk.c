@@ -7,11 +7,19 @@
 #include "device.h"
 #include "instance.h"
 
+#include <vulkan/vulkan.h>
+
 ECS_DECLARE(VulkanSystem);
 ECS_COMPONENT_DECLARE(VkInstance);
 ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 
 ECS_COMPONENT_DECLARE(VkPhysicalDevice);
+ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
+ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
+ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
+ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
+ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
+
 ECS_COMPONENT_DECLARE(VkDevice);
 ECS_COMPONENT_DECLARE(VkQueue);
 
@@ -35,7 +43,14 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_TAG_DEFINE(ecs, VulkanSystem);
     ECS_COMPONENT_DEFINE(ecs, VkInstance);
     ECS_COMPONENT_DEFINE(ecs, VkDebugUtilsMessengerEXT);
+
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceProperties);
+    ECS_COMPONENT_DEFINE(ecs, VkExtensionPropertiesArr);
+    ECS_COMPONENT_DEFINE(ecs, VkQueueFamilyPropertiesArr);
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceFeatures);
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceMemoryProperties);
+
     ECS_COMPONENT_DEFINE(ecs, VkDevice);
     ECS_COMPONENT_DEFINE(ecs, VkQueue);
 

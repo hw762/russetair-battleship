@@ -3,6 +3,15 @@
 
 #include <stb/stb_ds.h>
 
+/// @brief Name of the `VkPhysicalDeviceType` enum.
+const char* PHYSICAL_DEVICE_TYPES[] = {
+    "Other",
+    "Integrated",
+    "Discrete",
+    "Virtual",
+    "CPU"
+};
+
 /// @brief Gets all physical devices from an instnace
 /// @param instance
 /// @return An stb array of all devices
@@ -25,66 +34,54 @@ VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
     return p;
 }
 
-/// @brief Choose the first physical deivce supporting swapchains and graphics queue
-/// @param devices stb array of physical devices
-/// @return
-VkPhysicalDevice _choosePhysicalDevice(VkPhysicalDevice* devices)
+void _addPhysicalDeviceProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
 {
-    for (int i = 0; i < arrlen(devices); ++i) {
-        VkPhysicalDevice p = devices[i];
-        // Properties of interest
-        bool hasKHRSwapchainExtension = false;
-        bool hasGraphicsQueueFamily = false;
-        // Properties
-        VkPhysicalDeviceProperties props;
-        vkGetPhysicalDeviceProperties(p, &props);
-        ecs_trace("Checking physical device [%d] (%s).", i, props.deviceName);
-        uint32_t n_exts;
-        // Extensions
-        vkCheck(vkEnumerateDeviceExtensionProperties(p, NULL, &n_exts, NULL))
-        {
-            ecs_fatal("Failed to get number of device extension properties.");
-            exit(1);
-        }
-        {
-            VkExtensionProperties exts[n_exts];
-            vkCheck(vkEnumerateDeviceExtensionProperties(p, NULL, &n_exts, exts))
-            {
-                ecs_fatal("Failed to get device extension properties.");
-                exit(1);
-            }
-            for (uint32_t j = 0; j < n_exts; ++j) {
-                if (strcmp(exts[j].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
-                    hasKHRSwapchainExtension = true;
-                }
-            }
-        }
-        // Queue families
-        uint32_t n_qf_props;
-        vkGetPhysicalDeviceQueueFamilyProperties(p, &n_qf_props, NULL);
-        {
-            VkQueueFamilyProperties props[n_qf_props];
-            vkGetPhysicalDeviceQueueFamilyProperties(p, &n_qf_props, props);
-            for (uint32_t j = 0; j < n_qf_props; ++j) {
-                if (props[j].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                    hasGraphicsQueueFamily = true;
-                }
-            }
-        }
-        if (hasKHRSwapchainExtension && hasGraphicsQueueFamily) {
-            ecs_trace("Device [%d] satisfies requirement.", i);
-            return p;
-        }
-        ecs_trace("Device [%s] does not support required extensions.", props.deviceName);
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(device, &props);
+    ecs_trace("Physical device [%s] (%#x): %s.", props.deviceName, device, PHYSICAL_DEVICE_TYPES[props.deviceType]);
+    ecs_set_ptr(ecs, e, VkPhysicalDeviceProperties, &props);
+}
 
-        // // Features
-        // VkPhysicalDeviceFeatures features;
-        // vkGetPhysicalDeviceFeatures(p, &features);
-        // // Memory properties
-        // VkPhysicalDeviceMemoryProperties memory;
-        // vkGetPhysicalDeviceMemoryProperties(p, &memory);
+void _addPhysicalDeviceExtensionProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+{
+    uint32_t n_exts;
+    vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, NULL))
+    {
+        ecs_fatal("Failed to get number of device extension properties.");
+        exit(1);
     }
-    return VK_NULL_HANDLE;
+    VkExtensionPropertiesArr exts = NULL;
+    arrsetlen(exts, n_exts);
+    vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, exts))
+    {
+        ecs_fatal("Failed to get device extension properties.");
+        exit(1);
+    }
+    ecs_set_ptr(ecs, e, VkExtensionPropertiesArr, &exts);
+}
+
+void _addPhysicalDeviceQueueFamiliyProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+{
+    uint32_t n_qf_props;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &n_qf_props, NULL);
+    VkQueueFamilyPropertiesArr props = NULL;
+    arrsetlen(props, n_qf_props);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &n_qf_props, props);
+    ecs_set_ptr(ecs, e, VkQueueFamilyPropertiesArr, &props);
+}
+
+void _addPhysicalDeviceFeatures(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+{
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(device, &features);
+    ecs_set_ptr(ecs, e, VkPhysicalDeviceFeatures, &features);
+}
+
+void _addPhysicalDeviceMemoryProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+{
+    VkPhysicalDeviceMemoryProperties memory;
+    vkGetPhysicalDeviceMemoryProperties(device, &memory);
+    ecs_set_ptr(ecs, e, VkPhysicalDeviceMemoryProperties, &memory);
 }
 
 ////// The constructor
@@ -97,9 +94,15 @@ void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent,
     ecs_log_push();
 
     VkPhysicalDevice* physDevices = _getPhysicalDevices(instance);
-    const ecs_entity_t* e = ecs_bulk_new(ecs, VkPhysicalDevice, arrlen(physDevices));
+    const ecs_entity_t* es = ecs_bulk_new(ecs, VkPhysicalDevice, arrlen(physDevices));
     for (int i = 0; i < arrlen(physDevices); ++i) {
-        ecs_add_pair(ecs, e[i], EcsChildOf, parent);
+        ecs_entity_t e = es[i];
+        VkPhysicalDevice d = physDevices[i];
+        ecs_add_pair(ecs, es[i], EcsChildOf, parent);
+        _addPhysicalDeviceProperties(ecs, e, d);
+        _addPhysicalDeviceExtensionProperties(ecs, e, d);
+        _addPhysicalDeviceFeatures(ecs, e, d);
+        _addPhysicalDeviceMemoryProperties(ecs, e, d);
     }
     arrfree(physDevices);
 
