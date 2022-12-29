@@ -3,4 +3,4 @@
 #include <flecs.h>
 #include <vulkan/vulkan.h>
 
-VkPhysicalDevice _VkPhysicalDevice(VkInstance instance);
+void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent, VkInstance instance);

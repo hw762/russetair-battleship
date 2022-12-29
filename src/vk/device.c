@@ -3,6 +3,9 @@
 
 #include <stb/stb_ds.h>
 
+/// @brief Gets all physical devices from an instnace
+/// @param instance
+/// @return An stb array of all devices
 VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
 {
     uint32_t count;
@@ -22,6 +25,9 @@ VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
     return p;
 }
 
+/// @brief Choose the first physical deivce supporting swapchains and graphics queue
+/// @param devices stb array of physical devices
+/// @return
 VkPhysicalDevice _choosePhysicalDevice(VkPhysicalDevice* devices)
 {
     for (int i = 0; i < arrlen(devices); ++i) {
@@ -84,15 +90,18 @@ VkPhysicalDevice _choosePhysicalDevice(VkPhysicalDevice* devices)
 ////// The constructor
 
 // TODO: maybe make this an entity
-VkPhysicalDevice _VkPhysicalDevice(VkInstance instance)
+void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent,
+    VkInstance instance)
 {
-    ecs_trace("Selecting VkPhysicalDevice.");
+    ecs_trace("Spawning VkPhysicalDevice entities.");
     ecs_log_push();
 
     VkPhysicalDevice* physDevices = _getPhysicalDevices(instance);
-    VkPhysicalDevice chosenDevice = _choosePhysicalDevice(physDevices);
+    const ecs_entity_t* e = ecs_bulk_new(ecs, VkPhysicalDevice, arrlen(physDevices));
+    for (int i = 0; i < arrlen(physDevices); ++i) {
+        ecs_add_pair(ecs, e[i], EcsChildOf, parent);
+    }
     arrfree(physDevices);
 
     ecs_log_pop();
-    return NULL; // FIXME
 }
