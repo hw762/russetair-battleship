@@ -20,7 +20,7 @@ VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
     uint32_t count;
     vkCheck(vkEnumeratePhysicalDevices(instance, &count, NULL))
     {
-        ecs_fatal("Failed to enumerate number of physical devices.");
+        ecs_fatal("Failed to enumerate number of physical devices");
         exit(1);
     }
     ecs_trace("Found [%d] physical devices", count);
@@ -28,7 +28,7 @@ VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
     arrsetlen(p, count);
     vkCheck(vkEnumeratePhysicalDevices(instance, &count, p))
     {
-        ecs_fatal("Failed to enumerate physical devices.");
+        ecs_fatal("Failed to enumerate physical devices");
         exit(1);
     }
     return p;
@@ -38,7 +38,7 @@ void _addPhysicalDeviceProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDe
 {
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(device, &props);
-    ecs_trace("Physical device [%s] (%#lx): %s.", props.deviceName, device, PHYSICAL_DEVICE_TYPES[props.deviceType]);
+    ecs_trace("Physical device [%s] (%#p): %s", props.deviceName, device, PHYSICAL_DEVICE_TYPES[props.deviceType]);
     ecs_set_ptr(ecs, e, VkPhysicalDeviceProperties, &props);
 }
 
@@ -47,14 +47,14 @@ void _addPhysicalDeviceExtensionProperties(ecs_world_t* ecs, ecs_entity_t e, VkP
     uint32_t n_exts;
     vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, NULL))
     {
-        ecs_fatal("Failed to get number of device extension properties.");
+        ecs_fatal("Failed to get number of device extension properties");
         exit(1);
     }
     VkExtensionPropertiesArr exts = NULL;
     arrsetlen(exts, n_exts);
     vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, exts))
     {
-        ecs_fatal("Failed to get device extension properties.");
+        ecs_fatal("Failed to get device extension properties");
         exit(1);
     }
     ecs_set_ptr(ecs, e, VkExtensionPropertiesArr, &exts);
@@ -107,7 +107,7 @@ bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
 ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
 {
     ecs_entity_t selected = 0;
-    ecs_trace("Selecting first appropriate device.");
+    ecs_trace("Selecting first appropriate device");
     ecs_log_push();
     ecs_filter_t* f = ecs_filter(ecs,
         { .terms = {
@@ -127,13 +127,13 @@ ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
         bool hasKHRSwapchainExt = _hasKHRSwapchainExt(exts);
         bool hasGraphicsQueueFamily = _hasGraphicsQueueFamily(qfs);
         if (hasKHRSwapchainExt && hasGraphicsQueueFamily) {
-            ecs_trace("SELECTED VkPhysicalDevice = %#lx, [%s]", device, p.deviceName);
+            ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", device, p.deviceName);
             ecs_iter_fini(&it);
             ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &device);
             selected = physDevice;
             break;
         } else {
-            ecs_trace("IGNORED VkPhysicalDevice = %#lx, [%s]", device, p.deviceName);
+            ecs_trace("IGNORED VkPhysicalDevice = %#p, [%s]", device, p.deviceName);
         }
     }
     ecs_log_pop();
@@ -142,10 +142,10 @@ ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
 
 ////// The constructor
 
-void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
+void _createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
     VkInstance instance)
 {
-    ecs_trace("Spawning VkPhysicalDevice entities.");
+    ecs_trace("Spawning VkPhysicalDevice entities");
     ecs_log_push();
 
     VkPhysicalDevice* physDevices = _getPhysicalDevices(instance);

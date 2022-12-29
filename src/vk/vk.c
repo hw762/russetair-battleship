@@ -87,7 +87,7 @@ ecs_entity_t createVulkanSystem(ecs_world_t* ecs,
     VkDebugUtilsMessengerEXT messenger = _VkDebugUtilsMessengerEXT(instance);
     ecs_set_ptr(ecs, e, VkDebugUtilsMessengerEXT, &messenger);
     // Populate physical device
-    _spawnPhysicalDevices(ecs, e, instance);
+    _createPhysicalDevices(ecs, e, instance);
     // Choose the best one
     ecs_entity_t physDevice = _selectPhysicalDevice(ecs, e);
     // Create logical device

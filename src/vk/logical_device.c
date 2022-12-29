@@ -11,11 +11,11 @@ static const char* _requiredExtensions[] = {
 
 ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
 {
-    ecs_trace("Spawning VkLogicalDevice entities.");
+    ecs_trace("Spawning VkLogicalDevice entities");
     ecs_log_push();
 
     VkPhysicalDevice physDevice = *ecs_get(ecs, physDeviceEntity, VkPhysicalDevice);
-    ecs_trace("Selected physical device %#lx.", physDevice);
+    ecs_trace("Selected physical device %#p", physDevice);
     VkPhysicalDeviceFeatures features = { 0 };
     VkQueueFamilyPropertiesArr queueProps
         = *ecs_get(ecs, physDeviceEntity, VkQueueFamilyPropertiesArr);
@@ -46,13 +46,13 @@ ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntit
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
     };
-    ecs_trace("Created VkDeviceCreateInfo.");
     VkDevice device;
     vkCheck(vkCreateDevice(physDevice, &deviceCI, NULL, &device))
     {
-        ecs_fatal("Failed to create logical device.");
+        ecs_fatal("Failed to create logical device");
         exit(1);
     }
+    ecs_trace("Done creating VkDevice = %#p", device);
     ecs_entity_t e = ecs_new_id(ecs);
     ecs_set_ptr(ecs, e, VkDevice, &device);
     ecs_add_pair(ecs, e, EcsChildOf, physDeviceEntity);

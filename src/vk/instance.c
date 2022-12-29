@@ -104,29 +104,29 @@ _getRequiredExtensions(const char** sdl_exts, uint32_t n_sdl_exts)
 
 VkDebugUtilsMessengerEXT _VkDebugUtilsMessengerEXT(VkInstance instance)
 {
-    ecs_trace("Setting up messenger.");
+    ecs_trace("Setting up messenger");
     ecs_log_push();
     PFN_vkCreateDebugUtilsMessengerEXT create = (PFN_vkCreateDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(
             instance,
             "vkCreateDebugUtilsMessengerEXT");
     if (!create) {
-        ecs_fatal("Failed to load debug extension.");
+        ecs_fatal("Failed to load debug extension");
         exit(1);
     }
     VkDebugUtilsMessengerEXT messenger;
     if (create(instance, &_debug_utils_messenger_create_info_ext, NULL, &messenger) != VK_SUCCESS) {
-        ecs_fatal("Failed to create debug messenger.");
+        ecs_fatal("Failed to create debug messenger");
         exit(1);
     }
-    ecs_trace("Done setting up messenger.");
+    ecs_trace("Done setting up messenger");
     ecs_log_pop();
     return messenger;
 }
 
 VkInstance _VkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
 {
-    ecs_trace("Creating VkInstance.");
+    ecs_trace("Creating VkInstance");
     ecs_log_push();
     VkApplicationInfo app_info
         = {
@@ -153,12 +153,12 @@ VkInstance _VkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
     VkInstance instance;
     vkCheck(vkCreateInstance(&ci, NULL, &instance))
     {
-        ecs_fatal("Failed to created Vulkan instance.");
+        ecs_fatal("Failed to created Vulkan instance");
         exit(1);
     }
     arrfree(extensions);
     arrfree(layers);
-    ecs_trace("Done creating VkInstance = %#llx.", instance);
+    ecs_trace("Done creating VkInstance = %#llx", instance);
     ecs_log_pop();
     return instance;
 }
