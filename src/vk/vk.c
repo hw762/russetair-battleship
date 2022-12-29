@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include "instance.h"
+#include "logical_device.h"
 #include "physical_device.h"
 
 #include <vulkan/vulkan.h>
@@ -87,6 +88,10 @@ ecs_entity_t createVulkanInstance(ecs_world_t* ecs,
     ecs_set_ptr(ecs, e, VkDebugUtilsMessengerEXT, &messenger);
     // Populate physical device
     _spawnPhysicalDevices(ecs, e, instance);
+    // Choose the best one
+    ecs_entity_t physDevice = _selectPhysicalDevice(ecs, e);
+    // Create logical device
+    ecs_entity_t logicalDevice = _spawnLogicalDevice(ecs, physDevice);
     ecs_log_pop();
     return e;
 }

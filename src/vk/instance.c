@@ -25,12 +25,11 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL _vkDebugCallback(
         ecs_warn(fmt, pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        // Info is too verbose for normal builds
         ecs_dbg(fmt, pCallbackData->pMessage);
         break;
     default:
         // Anything else gets even lower level
-        ecs_dbg_2(fmt, pCallbackData->pMessage);
+        ecs_dbg(fmt, pCallbackData->pMessage);
         break;
     }
     return VK_FALSE;

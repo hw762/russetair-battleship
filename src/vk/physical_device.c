@@ -104,12 +104,9 @@ bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
     return false;
 }
 
-/// @brief Select the best physical device for vulkan system
-/// TODO select best instead of first
-/// @param ecs
-/// @param system
-void _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
+ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
 {
+    ecs_entity_t selected = 0;
     ecs_trace("Selecting first appropriate device.");
     ecs_log_push();
     ecs_filter_t* f = ecs_filter(ecs,
@@ -122,6 +119,7 @@ void _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
           } });
     ecs_iter_t it = ecs_filter_iter(ecs, f);
     while (ecs_filter_next(&it)) {
+        ecs_entity_t physDevice = it.entities[0];
         VkPhysicalDevice device = *ecs_field(&it, VkPhysicalDevice, 1);
         VkPhysicalDeviceProperties p = *ecs_field(&it, VkPhysicalDeviceProperties, 2);
         VkExtensionPropertiesArr exts = *ecs_field(&it, VkExtensionPropertiesArr, 3);
@@ -132,12 +130,14 @@ void _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
             ecs_trace("SELECTED VkPhysicalDevice = %#x, [%s]", device, p.deviceName);
             ecs_iter_fini(&it);
             ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &device);
+            selected = physDevice;
             break;
         } else {
             ecs_trace("IGNORED VkPhysicalDevice = %#x, [%s]", device, p.deviceName);
         }
     }
     ecs_log_pop();
+    return selected;
 }
 
 ////// The constructor
@@ -161,8 +161,5 @@ void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
         _addPhysicalDeviceMemoryProperties(ecs, e, d);
     }
     arrfree(physDevices);
-
-    _selectPhysicalDevice(ecs, system);
-
     ecs_log_pop();
 }
