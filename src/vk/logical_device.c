@@ -3,36 +3,39 @@
 
 #include <stb/stb_ds.h>
 
+static const char* _requiredExtensions[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+};
+
 /* The constructor */
 
 ecs_entity_t _spawnLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
 {
     ecs_trace("Spawning VkLogicalDevice entities.");
     ecs_log_push();
-    const char* _requiredExtensions[] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    };
+
     VkPhysicalDevice physDevice = *ecs_get(ecs, physDeviceEntity, VkPhysicalDevice);
-    ecs_trace("Selected physical device %#x.", physDevice);
+    ecs_trace("Selected physical device %#lx.", physDevice);
     VkPhysicalDeviceFeatures features = { 0 };
     VkQueueFamilyPropertiesArr queueProps
         = *ecs_get(ecs, physDeviceEntity, VkQueueFamilyPropertiesArr);
     int nQueues = arrlen(queueProps);
 
     VkDeviceQueueCreateInfo queueCI[nQueues];
-    float** ppPriorities = NULL;
-    arrsetlen(ppPriorities, nQueues);
+
     for (int i = 0; i < nQueues; ++i) {
         VkQueueFamilyProperties prop = queueProps[i];
-        ppPriorities[i] = NULL;
-        arrsetlen(ppPriorities, prop.queueCount);
-        float* priorities = ppPriorities[i];
-        memset(priorities, 0, sizeof(*priorities) * prop.queueCount);
+        uint32_t qc = prop.queueCount;
+        assert(qc > 0);
+        // Destroyed when returning!
+        float* priorities = alloca(qc * sizeof(float));
+        memset(priorities, 0, sizeof(*priorities) * qc);
         queueCI[i]
             = (VkDeviceQueueCreateInfo) {
                   .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                   .queueFamilyIndex = i,
                   .pQueuePriorities = priorities,
+                  .queueCount = qc,
               };
     }
     VkDeviceCreateInfo deviceCI = {
@@ -54,9 +57,5 @@ ecs_entity_t _spawnLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity
     ecs_set_ptr(ecs, e, VkDevice, &device);
     ecs_add_pair(ecs, e, EcsChildOf, physDeviceEntity);
     ecs_log_pop();
-    for (int i = 0; i < nQueues; ++i) {
-        arrfree(ppPriorities[i]);
-    }
-    arrfree(ppPriorities);
     return e;
 }

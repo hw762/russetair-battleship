@@ -158,7 +158,7 @@ VkInstance _VkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
     }
     arrfree(extensions);
     arrfree(layers);
-    ecs_trace("Done creating VkInstance.");
+    ecs_trace("Done creating VkInstance = %#llx.", instance);
     ecs_log_pop();
     return instance;
 }

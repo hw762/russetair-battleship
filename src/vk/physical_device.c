@@ -38,7 +38,7 @@ void _addPhysicalDeviceProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDe
 {
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(device, &props);
-    ecs_trace("Physical device [%s] (%#x): %s.", props.deviceName, device, PHYSICAL_DEVICE_TYPES[props.deviceType]);
+    ecs_trace("Physical device [%s] (%#lx): %s.", props.deviceName, device, PHYSICAL_DEVICE_TYPES[props.deviceType]);
     ecs_set_ptr(ecs, e, VkPhysicalDeviceProperties, &props);
 }
 
@@ -127,13 +127,13 @@ ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
         bool hasKHRSwapchainExt = _hasKHRSwapchainExt(exts);
         bool hasGraphicsQueueFamily = _hasGraphicsQueueFamily(qfs);
         if (hasKHRSwapchainExt && hasGraphicsQueueFamily) {
-            ecs_trace("SELECTED VkPhysicalDevice = %#x, [%s]", device, p.deviceName);
+            ecs_trace("SELECTED VkPhysicalDevice = %#lx, [%s]", device, p.deviceName);
             ecs_iter_fini(&it);
             ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &device);
             selected = physDevice;
             break;
         } else {
-            ecs_trace("IGNORED VkPhysicalDevice = %#x, [%s]", device, p.deviceName);
+            ecs_trace("IGNORED VkPhysicalDevice = %#lx, [%s]", device, p.deviceName);
         }
     }
     ecs_log_pop();
@@ -149,11 +149,11 @@ void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
     ecs_log_push();
 
     VkPhysicalDevice* physDevices = _getPhysicalDevices(instance);
-    const ecs_entity_t* es = ecs_bulk_new(ecs, VkPhysicalDevice, arrlen(physDevices));
     for (int i = 0; i < arrlen(physDevices); ++i) {
-        ecs_entity_t e = es[i];
+        ecs_entity_t e = ecs_new_id(ecs);
         VkPhysicalDevice d = physDevices[i];
-        ecs_add_pair(ecs, es[i], EcsChildOf, system);
+        ecs_add_pair(ecs, e, EcsChildOf, system);
+        ecs_set_ptr(ecs, e, VkPhysicalDevice, &d);
         _addPhysicalDeviceProperties(ecs, e, d);
         _addPhysicalDeviceExtensionProperties(ecs, e, d);
         _addPhysicalDeviceQueueFamiliyProperties(ecs, e, d);
