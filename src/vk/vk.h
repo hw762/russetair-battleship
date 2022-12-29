@@ -20,6 +20,8 @@ typedef VkQueueFamilyProperties* VkQueueFamilyPropertiesArr;
 extern ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
+typedef VkPhysicalDevice SelectedPhysicalDevice;
+extern ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
 
 extern ECS_COMPONENT_DECLARE(VkDevice);
 extern ECS_COMPONENT_DECLARE(VkQueue);

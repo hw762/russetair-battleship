@@ -84,10 +84,66 @@ void _addPhysicalDeviceMemoryProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhys
     ecs_set_ptr(ecs, e, VkPhysicalDeviceMemoryProperties, &memory);
 }
 
+bool _hasKHRSwapchainExt(VkExtensionPropertiesArr exts)
+{
+    for (int i = 0; i < arrlen(exts); ++i) {
+        if (strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
+{
+    for (int i = 0; i < arrlen(qfs); ++i) {
+        if (qfs[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/// @brief Select the best physical device for vulkan system
+/// TODO select best instead of first
+/// @param ecs
+/// @param system
+void _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
+{
+    ecs_trace("Selecting first appropriate device.");
+    ecs_log_push();
+    ecs_filter_t* f = ecs_filter(ecs,
+        { .terms = {
+              { ecs_id(VkPhysicalDevice) },
+              { ecs_id(VkPhysicalDeviceProperties) },
+              { ecs_id(VkExtensionPropertiesArr) },
+              { ecs_id(VkQueueFamilyPropertiesArr) },
+              //   { ecs_pair(EcsChildOf, system) },
+          } });
+    ecs_iter_t it = ecs_filter_iter(ecs, f);
+    while (ecs_filter_next(&it)) {
+        VkPhysicalDevice device = *ecs_field(&it, VkPhysicalDevice, 1);
+        VkPhysicalDeviceProperties p = *ecs_field(&it, VkPhysicalDeviceProperties, 2);
+        VkExtensionPropertiesArr exts = *ecs_field(&it, VkExtensionPropertiesArr, 3);
+        VkQueueFamilyPropertiesArr qfs = *ecs_field(&it, VkQueueFamilyPropertiesArr, 4);
+        bool hasKHRSwapchainExt = _hasKHRSwapchainExt(exts);
+        bool hasGraphicsQueueFamily = _hasGraphicsQueueFamily(qfs);
+        if (hasKHRSwapchainExt && hasGraphicsQueueFamily) {
+            ecs_trace("SELECTED VkPhysicalDevice = %#x, [%s]", device, p.deviceName);
+            ecs_iter_fini(&it);
+            ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &device);
+            break;
+        } else {
+            ecs_trace("IGNORED VkPhysicalDevice = %#x, [%s]", device, p.deviceName);
+        }
+    }
+    ecs_log_pop();
+}
+
 ////// The constructor
 
 // TODO: maybe make this an entity
-void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent,
+void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
     VkInstance instance)
 {
     ecs_trace("Spawning VkPhysicalDevice entities.");
@@ -98,13 +154,16 @@ void _spawnPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent,
     for (int i = 0; i < arrlen(physDevices); ++i) {
         ecs_entity_t e = es[i];
         VkPhysicalDevice d = physDevices[i];
-        ecs_add_pair(ecs, es[i], EcsChildOf, parent);
+        ecs_add_pair(ecs, es[i], EcsChildOf, system);
         _addPhysicalDeviceProperties(ecs, e, d);
         _addPhysicalDeviceExtensionProperties(ecs, e, d);
+        _addPhysicalDeviceQueueFamiliyProperties(ecs, e, d);
         _addPhysicalDeviceFeatures(ecs, e, d);
         _addPhysicalDeviceMemoryProperties(ecs, e, d);
     }
     arrfree(physDevices);
+
+    _selectPhysicalDevice(ecs, system);
 
     ecs_log_pop();
 }

@@ -14,6 +14,7 @@ ECS_COMPONENT_DECLARE(VkInstance);
 ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 
 ECS_COMPONENT_DECLARE(VkPhysicalDevice);
+ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
 ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
 ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
 ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
@@ -45,6 +46,7 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkDebugUtilsMessengerEXT);
 
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
+    ECS_COMPONENT_DEFINE(ecs, SelectedPhysicalDevice);
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceProperties);
     ECS_COMPONENT_DEFINE(ecs, VkExtensionPropertiesArr);
     ECS_COMPONENT_DEFINE(ecs, VkQueueFamilyPropertiesArr);

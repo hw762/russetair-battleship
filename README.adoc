@@ -11,6 +11,7 @@
 - [x] Enumerates physical devices and store as entities
 - [ ] Select best device
 - [ ] Create logical device
+- [ ] Proper cleanup
 
 == Style Guide
 
