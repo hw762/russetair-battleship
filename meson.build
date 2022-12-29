@@ -24,16 +24,17 @@ assimp_dep = dependency('assimp')
 # SQLite3
 sqlite3_dep = dependency('sqlite3')
 
+# Others
+stb_dep = dependency('stb')
+
 subdir('src')
 
 thirdparty_src = files(
   'thirdparty/flecs/flecs.c',
-  'thirdparty/stb/stb_ds.c',
 )
 
 src_inc = include_directories('src')
 thirdparty_inc = include_directories([
-  'thirdparty/',
   'thirdparty/flecs',
 ])
 
@@ -46,6 +47,7 @@ exe = executable('c_battleship', [
     gfx_deps,
     assimp_dep,
     sqlite3_dep,
+    stb_dep,
   ],
   include_directories : [
     src_inc,
