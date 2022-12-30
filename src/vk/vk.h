@@ -27,22 +27,20 @@ extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
 
 // Logical device
-extern ECS_DECLARE(VulkanRenderDevice);
+extern ECS_DECLARE(RenderDevice);
 extern ECS_COMPONENT_DECLARE(VkSurfaceKHR);
 extern ECS_COMPONENT_DECLARE(VkDevice);
-extern ECS_DECLARE(QueueIsGraphics);
 extern ECS_COMPONENT_DECLARE(VkQueue);
-extern ECS_COMPONENT_DECLARE(VkSwapchainKHR);
-
-// Surface
-typedef VkImageView* VkImageViewArr;
-extern ECS_COMPONENT_DECLARE(VkImageViewArr);
-extern ECS_COMPONENT_DECLARE(VkFramebuffer);
+extern ECS_DECLARE(QueueIsGraphics);
 
 // Pipeline
+extern ECS_DECLARE(GraphicsPipeline);
+typedef VkImageView* VkImageViewArr;
+extern ECS_COMPONENT_DECLARE(VkImageViewArr);
+extern ECS_COMPONENT_DECLARE(VkSwapchainKHR);
+extern ECS_COMPONENT_DECLARE(VkFramebuffer);
 extern ECS_COMPONENT_DECLARE(VkPipeline);
-extern ECS_COMPONENT_DECLARE(VkComputePipelineCreateInfo);
-extern ECS_COMPONENT_DECLARE(VkGraphicsPipelineCreateInfo);
+
 extern ECS_COMPONENT_DECLARE(VkRenderPass);
 extern ECS_COMPONENT_DECLARE(VkDescriptorSetLayout);
 extern ECS_COMPONENT_DECLARE(VkShaderModule);

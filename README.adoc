@@ -23,6 +23,7 @@ If entity is supposed to be "system-level", such as graphics system, vulkan syst
 - [x] Create surface
 - [x] Create queues
 - [x] Create swapchain
+- [ ] Refactor with Prefabs
 - [ ] Clear screen render pass
 - [ ] Triangle
 - [ ] Select best device instead of first device

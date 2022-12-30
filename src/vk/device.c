@@ -118,10 +118,12 @@ static ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
               { ecs_id(VkExtensionPropertiesArr) },
               { ecs_id(VkQueueFamilyPropertiesArr) },
               { ecs_pair(EcsChildOf, system) },
+              { ecs_pair(EcsIsA, PhysicalDevice) },
           } });
     ecs_iter_t it = ecs_filter_iter(ecs, f);
     while (ecs_filter_next(&it)) {
         ecs_entity_t physDevice = it.entities[0];
+        assert(ecs_has_pair(ecs, physDevice, EcsIsA, PhysicalDevice));
         VkPhysicalDevice device = *ecs_field(&it, VkPhysicalDevice, 1);
         VkPhysicalDeviceProperties p = *ecs_field(&it, VkPhysicalDeviceProperties, 2);
         VkExtensionPropertiesArr exts = *ecs_field(&it, VkExtensionPropertiesArr, 3);
@@ -161,6 +163,7 @@ _createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent,
         _addPhysicalDeviceQueueFamiliyProperties(ecs, e, d);
         _addPhysicalDeviceFeatures(ecs, e, d);
         _addPhysicalDeviceMemoryProperties(ecs, e, d);
+        assert(ecs_has_pair(ecs, e, EcsIsA, PhysicalDevice));
     }
     arrfree(physDevices);
     ecs_log_pop();
@@ -257,7 +260,9 @@ void createVulkanPhysicalDevices(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
 void createVulkanRenderDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
 {
     assert(ecs_has_pair(ecs, eVulkanSystem, EcsIsA, VulkanSystem));
-    ecs_entity_t eRenderDevice = ecs_get_target(ecs, eVulkanSystem, VulkanRenderDevice, 0);
+    ecs_trace("Creating RenderDevice");
+    ecs_log_push();
+    ecs_entity_t eRenderDevice = ecs_get_target(ecs, eVulkanSystem, RenderDevice, 0);
     // Choose the best one
     ecs_entity_t selectedDevice = _selectPhysicalDevice(ecs, eVulkanSystem);
     assert(ecs_has_pair(ecs, selectedDevice, EcsIsA, PhysicalDevice));
@@ -272,4 +277,5 @@ void createVulkanRenderDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
         = _getGraphicsQueueFamilyIndex(physDev, device, props);
     ecs_entity_t graphicsQueue = _setupDeviceQueue(ecs, eRenderDevice, device, graphicsQueueFamilyIndex, 0);
     ecs_add(ecs, graphicsQueue, QueueIsGraphics);
+    ecs_log_pop();
 }
