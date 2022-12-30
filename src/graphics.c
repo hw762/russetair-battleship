@@ -43,16 +43,18 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, extensions)) {
         ecs_abort(1, "Failed to get required extensions: %s", SDL_GetError());
     }
-    ecs_entity_t instance = createVulkanInstanceAndDevices(ecs, extensions, n_extensions);
-    ecs_add_pair(ecs, instance, EcsChildOf, e);
+    ecs_entity_t system = ecs_new_w_pair(ecs, EcsIsA, VulkanSystem);
+    createVulkanInstance(ecs, system, extensions, n_extensions);
     free(extensions);
-    VkSurfaceKHR surface;
-    if (!SDL_Vulkan_CreateSurface(*window_p, *ecs_get(ecs, instance, VkInstance), &surface)) {
-        ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
-    }
-    setupVulkanSurface(ecs, instance, surface);
-    // TODO: settings
-    setupSwapchain(ecs, instance, 3, true, 1280, 720);
+    createVulkanPhysicalDevices(ecs, system);
+    createVulkanRenderDevice(ecs, system);
+    // VkSurfaceKHR surface;
+    // if (!SDL_Vulkan_CreateSurface(*window_p, *ecs_get(ecs, instance, VkInstance), &surface)) {
+    //     ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
+    // }
+    // setupVulkanSurface(ecs, instance, surface);
+    // // TODO: settings
+    // setupSwapchain(ecs, instance, 3, true, 1280, 720);
 
     return e;
 }

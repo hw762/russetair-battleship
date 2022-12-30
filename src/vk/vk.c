@@ -83,24 +83,26 @@ void registerVulkan(ecs_world_t* ecs)
 
     ECS_COMPONENT_DEFINE(ecs, VkCommandPool);
     // TODO: define slots
+    ecs_add_pair(ecs, VulkanInstance, EcsSlotOf, VulkanSystem);
+    ecs_add_pair(ecs, VulkanInstance, EcsChildOf, VulkanSystem);
+    ecs_add_pair(ecs, VulkanRenderDevice, EcsSlotOf, VulkanSystem);
+    ecs_add_pair(ecs, VulkanRenderDevice, EcsChildOf, VulkanSystem);
 }
 
-ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
+void createVulkanInstance(ecs_world_t* ecs, ecs_entity_t eSystem,
     const char** extensions, uint32_t n_extensions)
 {
+    assert(ecs_has_pair(ecs, eSystem, EcsIsA, VulkanSystem));
     ecs_trace("Creating Vulkan Instance");
     ecs_log_push();
-    ecs_entity_t e = ecs_new_w_pair(ecs, EcsIsA, VulkanSystem);
-    // ecs_add(ecs, e, VulkanSystem);
+    ecs_entity_t eInstance = ecs_get_target(ecs, eSystem, VulkanInstance, 0);
     // Create VkInstance, adding compatibility extension
     VkInstance instance = newVkInstance(extensions, n_extensions);
-    ecs_set_ptr(ecs, e, VkInstance, &instance);
+    ecs_set_ptr(ecs, eInstance, VkInstance, &instance);
     // Setup messenger
     VkDebugUtilsMessengerEXT messenger = newVkDebugUtilsMessengerEXT(instance);
-    ecs_set_ptr(ecs, e, VkDebugUtilsMessengerEXT, &messenger);
-    setupDevice(ecs, e);
+    ecs_set_ptr(ecs, eInstance, VkDebugUtilsMessengerEXT, &messenger);
     ecs_log_pop();
-    return e;
 }
 
 void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eSystem, VkSurfaceKHR surface)

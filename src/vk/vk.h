@@ -51,11 +51,17 @@ extern ECS_COMPONENT_DECLARE(VkCommandPool);
 
 void registerVulkan(ecs_world_t* ecs);
 
-/// @brief Create a Vulkan instance, select physical device, and create logical device.
-/// @param ecs
-/// @return Vulkan system
-ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
+/// @brief Create a Vulkan instance in a system
+/// @param ecs system
+void createVulkanInstance(ecs_world_t* ecs,
+    ecs_entity_t eSystem,
     const char** extensions, uint32_t n_extensions);
+
+/// @brief Select and add device to Vulkan system. Limitation: one physical device and one logical device only
+/// @param ecs
+/// @param eVulkanSystem
+void createVulkanPhysicalDevices(ecs_world_t* ecs, ecs_entity_t eVulkanSystem);
+void createVulkanRenderDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem);
 
 /// @brief Sets up a surface
 /// @param ecs

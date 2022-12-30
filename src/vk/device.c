@@ -132,7 +132,6 @@ static ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
             ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", device, p.deviceName);
             ecs_iter_fini(&it);
             selected = physDevice;
-            ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &selected);
             break;
         } else {
             ecs_trace("IGNORED VkPhysicalDevice = %#p, [%s]", device, p.deviceName);
@@ -153,8 +152,7 @@ _createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent,
 
     VkPhysicalDevice* physDevices = _getPhysicalDevices(instance);
     for (int i = 0; i < arrlen(physDevices); ++i) {
-        ecs_entity_t e = ecs_new_id(ecs);
-        ecs_add(ecs, e, PhysicalDevice);
+        ecs_entity_t e = ecs_new_w_pair(ecs, EcsIsA, PhysicalDevice);
         VkPhysicalDevice d = physDevices[i];
         ecs_add_pair(ecs, e, EcsChildOf, parent);
         ecs_set_ptr(ecs, e, VkPhysicalDevice, &d);
@@ -173,7 +171,7 @@ static const char* _requiredExtensions[] = {
 };
 
 static ecs_entity_t
-_setupDeviceQueue(ecs_world_t* ecs, ecs_entity_t parent, VkDevice device, int queueFamilyIndex, int queueIndex)
+_setupDeviceQueue(ecs_world_t* ecs, ecs_entity_t e, VkDevice device, int queueFamilyIndex, int queueIndex)
 {
     ecs_trace("Creating queue family [%d] index [%d] on device [%#p]",
         queueFamilyIndex, queueIndex, device);
@@ -199,11 +197,11 @@ _getGraphicsQueueFamilyIndex(VkPhysicalDevice phys, VkDevice device, VkQueueFami
     return -1;
 }
 
-static void _setupLogicalDevice(ecs_world_t* ecs, ecs_entity_t parent, ecs_entity_t ePhysicalDevice)
+static void _setupLogicalDevice(ecs_world_t* ecs, ecs_entity_t e, ecs_entity_t ePhysicalDevice)
 {
     ecs_trace("Spawning VkLogicalDevice entities");
     ecs_log_push();
-    assert(ecs_has(ecs, ePhysicalDevice, VkPhysicalDevice));
+    assert(ecs_has_pair(ecs, ePhysicalDevice, EcsIsA, PhysicalDevice));
     VkPhysicalDevice physDevice = *ecs_get(ecs, ePhysicalDevice, VkPhysicalDevice);
     ecs_trace("Selected physical device %#p", physDevice);
     VkPhysicalDeviceFeatures features = { 0 };
@@ -242,27 +240,36 @@ static void _setupLogicalDevice(ecs_world_t* ecs, ecs_entity_t parent, ecs_entit
         ecs_abort(1, "Failed to create logical device");
     }
     ecs_trace("Done creating VkDevice = %#p", device);
-    ecs_set_ptr(ecs, parent, VkDevice, &device);
+    ecs_set_ptr(ecs, e, VkDevice, &device);
 
     ecs_log_pop();
 }
 
-void setupDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
+void createVulkanPhysicalDevices(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
 {
     assert(ecs_has_pair(ecs, eVulkanSystem, EcsIsA, VulkanSystem));
-    VkInstance instance = *ecs_get(ecs, eVulkanSystem, VkInstance);
+    ecs_entity_t eInstance = ecs_get_target(ecs, eVulkanSystem, VulkanInstance, 0);
+    VkInstance instance = *ecs_get(ecs, eInstance, VkInstance);
     // Populate physical device
     _createPhysicalDevices(ecs, eVulkanSystem, instance);
+}
+
+void createVulkanRenderDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
+{
+    assert(ecs_has_pair(ecs, eVulkanSystem, EcsIsA, VulkanSystem));
+    ecs_entity_t eRenderDevice = ecs_get_target(ecs, eVulkanSystem, VulkanRenderDevice, 0);
     // Choose the best one
     ecs_entity_t selectedDevice = _selectPhysicalDevice(ecs, eVulkanSystem);
+    assert(ecs_has_pair(ecs, selectedDevice, EcsIsA, PhysicalDevice));
+    ecs_set_ptr(ecs, eRenderDevice, SelectedPhysicalDevice, &selectedDevice);
     VkPhysicalDevice physDev = *ecs_get(ecs, selectedDevice, VkPhysicalDevice);
     // Create logical device
-    _setupLogicalDevice(ecs, eVulkanSystem, selectedDevice);
-    VkDevice device = *ecs_get(ecs, eVulkanSystem, VkDevice);
+    _setupLogicalDevice(ecs, eRenderDevice, selectedDevice);
+    VkDevice device = *ecs_get(ecs, eRenderDevice, VkDevice);
     VkQueueFamilyPropertiesArr props = *ecs_get(ecs, selectedDevice, VkQueueFamilyPropertiesArr);
     // Create graphics queue
     int graphicsQueueFamilyIndex
         = _getGraphicsQueueFamilyIndex(physDev, device, props);
-    ecs_entity_t graphicsQueue = _setupDeviceQueue(ecs, eVulkanSystem, device, graphicsQueueFamilyIndex, 0);
+    ecs_entity_t graphicsQueue = _setupDeviceQueue(ecs, eRenderDevice, device, graphicsQueueFamilyIndex, 0);
     ecs_add(ecs, graphicsQueue, QueueIsGraphics);
 }
