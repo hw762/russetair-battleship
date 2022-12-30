@@ -11,7 +11,8 @@ ecs_entity_t
 createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, int queueIndex)
 {
     VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
-    ecs_trace("Creating queue on device [%#p]", device);
+    ecs_trace("Creating queue family [%d] index [%d] on device [%#p]",
+        queueFamilyIndex, queueIndex, device);
     ecs_log_push();
     VkQueue q;
     vkGetDeviceQueue(device, queueFamilyIndex, queueIndex, &q);
