@@ -4,9 +4,8 @@
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 
+#include "device.h"
 #include "instance.h"
-#include "logical_device.h"
-#include "physical_device.h"
 
 #include <vulkan/vulkan.h>
 
