@@ -29,6 +29,7 @@ extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
 // Logical device
 extern ECS_DECLARE(LogicalDevice);
 extern ECS_COMPONENT_DECLARE(VkDevice);
+extern ECS_DECLARE(GraphicsQueue);
 extern ECS_COMPONENT_DECLARE(VkQueue);
 
 // Surface

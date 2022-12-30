@@ -26,6 +26,7 @@ ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
 
 ECS_DECLARE(LogicalDevice);
 ECS_COMPONENT_DECLARE(VkDevice);
+ECS_DECLARE(GraphicsQueue);
 ECS_COMPONENT_DECLARE(VkQueue);
 
 ECS_COMPONENT_DECLARE(VkImageView);
@@ -60,6 +61,7 @@ void registerVulkan(ecs_world_t* ecs)
 
     ECS_TAG_DEFINE(ecs, LogicalDevice);
     ECS_COMPONENT_DEFINE(ecs, VkDevice);
+    ECS_TAG_DEFINE(ecs, GraphicsQueue);
     ECS_COMPONENT_DEFINE(ecs, VkQueue);
 
     ECS_COMPONENT_DEFINE(ecs, VkImageView);
@@ -99,6 +101,7 @@ ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     // Create graphics queue
     int graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(ecs, device);
     ecs_entity_t graphicsQueue = createDeviceQueue(ecs, device, graphicsQueueFamilyIndex, 0);
+    ecs_add(ecs, graphicsQueue, GraphicsQueue);
     ecs_log_pop();
     return e;
 }

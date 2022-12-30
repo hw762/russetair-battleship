@@ -21,7 +21,7 @@ If entity is supposed to be "system-level", such as graphics system, vulkan syst
 - [x] Enumerates physical devices and store as entities
 - [x] Create logical device
 - [x] Create surface
-- [ ] Create queues
+- [x] Create queues
 - [ ] Swap chain creation
 - [ ] Clear screen render pass
 - [ ] Triangle
