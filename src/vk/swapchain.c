@@ -154,7 +154,7 @@ _setupImageViews(ecs_world_t* ecs, ecs_entity_t eSystem,
 void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
     int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight)
 {
-    assert(ecs_has(ecs, eSystem, VulkanSystem));
+    assert(ecs_has_pair(ecs, eSystem, EcsIsA, VulkanSystem));
 
     VkSurfaceKHR surface = *ecs_get(ecs, eSystem, VkSurfaceKHR);
     ecs_entity_t eSelected = *ecs_get(ecs, eSystem, SelectedPhysicalDevice);
@@ -202,7 +202,7 @@ void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
 
 void cleanupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem)
 {
-    assert(ecs_has(ecs, eSystem, VulkanSystem));
+    assert(ecs_has_pair(ecs, eSystem, EcsIsA, VulkanSystem));
     ecs_trace("Destroying Vulkan swapchain");
     VkDevice device = *ecs_get(ecs, eSystem, VkDevice);
     VkImageViewArr views = *ecs_get(ecs, eSystem, VkImageViewArr);
