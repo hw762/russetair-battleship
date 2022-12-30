@@ -91,7 +91,7 @@ ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     // Setup messenger
     VkDebugUtilsMessengerEXT messenger = newVkDebugUtilsMessengerEXT(instance);
     ecs_set_ptr(ecs, e, VkDebugUtilsMessengerEXT, &messenger);
-    createDevice(ecs, e);
+    setupDevice(ecs, e);
     ecs_log_pop();
     return e;
 }

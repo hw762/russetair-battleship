@@ -3,4 +3,7 @@
 #include <flecs.h>
 #include <vulkan/vulkan.h>
 
-void createDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem);
+/// @brief Select and add device to Vulkan system. Limitation: one physical device and one logical device only
+/// @param ecs
+/// @param eVulkanSystem
+void setupDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem);
