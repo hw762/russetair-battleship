@@ -102,7 +102,7 @@ _getRequiredExtensions(const char** sdl_exts, uint32_t n_sdl_exts)
     return extensions;
 }
 
-VkDebugUtilsMessengerEXT _VkDebugUtilsMessengerEXT(VkInstance instance)
+VkDebugUtilsMessengerEXT newVkDebugUtilsMessengerEXT(VkInstance instance)
 {
     ecs_trace("Setting up messenger");
     ecs_log_push();
@@ -124,7 +124,7 @@ VkDebugUtilsMessengerEXT _VkDebugUtilsMessengerEXT(VkInstance instance)
     return messenger;
 }
 
-VkInstance _VkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
+VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
 {
     ecs_trace("Creating VkInstance");
     ecs_log_push();

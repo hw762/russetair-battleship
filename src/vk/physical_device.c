@@ -4,7 +4,7 @@
 #include <stb/stb_ds.h>
 
 /// @brief Name of the `VkPhysicalDeviceType` enum.
-const char* PHYSICAL_DEVICE_TYPES[] = {
+static const char* PHYSICAL_DEVICE_TYPES[] = {
     "Other",
     "Integrated",
     "Discrete",
@@ -15,7 +15,7 @@ const char* PHYSICAL_DEVICE_TYPES[] = {
 /// @brief Gets all physical devices from an instnace
 /// @param instance
 /// @return An stb array of all devices
-VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
+static VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
 {
     uint32_t count;
     vkCheck(vkEnumeratePhysicalDevices(instance, &count, NULL))
@@ -34,7 +34,8 @@ VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
     return p;
 }
 
-void _addPhysicalDeviceProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+static void
+_addPhysicalDeviceProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
 {
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(device, &props);
@@ -42,7 +43,8 @@ void _addPhysicalDeviceProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDe
     ecs_set_ptr(ecs, e, VkPhysicalDeviceProperties, &props);
 }
 
-void _addPhysicalDeviceExtensionProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+static void
+_addPhysicalDeviceExtensionProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
 {
     uint32_t n_exts;
     vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, NULL))
@@ -60,7 +62,8 @@ void _addPhysicalDeviceExtensionProperties(ecs_world_t* ecs, ecs_entity_t e, VkP
     ecs_set_ptr(ecs, e, VkExtensionPropertiesArr, &exts);
 }
 
-void _addPhysicalDeviceQueueFamiliyProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+static void
+_addPhysicalDeviceQueueFamiliyProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
 {
     uint32_t n_qf_props;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &n_qf_props, NULL);
@@ -70,21 +73,23 @@ void _addPhysicalDeviceQueueFamiliyProperties(ecs_world_t* ecs, ecs_entity_t e, 
     ecs_set_ptr(ecs, e, VkQueueFamilyPropertiesArr, &props);
 }
 
-void _addPhysicalDeviceFeatures(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+static void
+_addPhysicalDeviceFeatures(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
 {
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(device, &features);
     ecs_set_ptr(ecs, e, VkPhysicalDeviceFeatures, &features);
 }
 
-void _addPhysicalDeviceMemoryProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
+static void
+_addPhysicalDeviceMemoryProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysicalDevice device)
 {
     VkPhysicalDeviceMemoryProperties memory;
     vkGetPhysicalDeviceMemoryProperties(device, &memory);
     ecs_set_ptr(ecs, e, VkPhysicalDeviceMemoryProperties, &memory);
 }
 
-bool _hasKHRSwapchainExt(VkExtensionPropertiesArr exts)
+static bool _hasKHRSwapchainExt(VkExtensionPropertiesArr exts)
 {
     for (int i = 0; i < arrlen(exts); ++i) {
         if (strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
@@ -94,7 +99,7 @@ bool _hasKHRSwapchainExt(VkExtensionPropertiesArr exts)
     return false;
 }
 
-bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
+static bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
 {
     for (int i = 0; i < arrlen(qfs); ++i) {
         if (qfs[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
@@ -104,7 +109,7 @@ bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
     return false;
 }
 
-ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
+ecs_entity_t selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
 {
     ecs_entity_t selected = 0;
     ecs_trace("Selecting first appropriate device");
@@ -142,7 +147,7 @@ ecs_entity_t _selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
 
 ////// The constructor
 
-void _createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
+void createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
     VkInstance instance)
 {
     ecs_trace("Spawning VkPhysicalDevice entities");
@@ -151,6 +156,7 @@ void _createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t system,
     VkPhysicalDevice* physDevices = _getPhysicalDevices(instance);
     for (int i = 0; i < arrlen(physDevices); ++i) {
         ecs_entity_t e = ecs_new_id(ecs);
+        ecs_add(ecs, e, PhysicalDevice);
         VkPhysicalDevice d = physDevices[i];
         ecs_add_pair(ecs, e, EcsChildOf, system);
         ecs_set_ptr(ecs, e, VkPhysicalDevice, &d);

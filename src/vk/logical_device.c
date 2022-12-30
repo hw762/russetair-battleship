@@ -7,8 +7,8 @@ static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
-static ecs_entity_t
-_createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, int queueIndex)
+ecs_entity_t
+createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, int queueIndex)
 {
     VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
     ecs_trace("Creating queue on device [%#p]", device);
@@ -21,8 +21,7 @@ _createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex,
     return eQueue;
 }
 
-static int
-_getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
+int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
 {
     ecs_entity_t ePhys
         = ecs_get_target(ecs, eDevice, EcsChildOf, 0);
@@ -43,7 +42,7 @@ _getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
 
 /* The constructor */
 
-ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
+ecs_entity_t createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
 {
     ecs_trace("Spawning VkLogicalDevice entities");
     ecs_log_push();
@@ -88,10 +87,9 @@ ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntit
     }
     ecs_trace("Done creating VkDevice = %#p", device);
     ecs_entity_t e = ecs_new_id(ecs);
+    ecs_add(ecs, e, LogicalDevice);
     ecs_set_ptr(ecs, e, VkDevice, &device);
     ecs_add_pair(ecs, e, EcsChildOf, physDeviceEntity);
-
-    int graphicsQueueFamilyIndex = _getGraphicsQueueFamilyIndex(ecs, e);
 
     ecs_log_pop();
 
