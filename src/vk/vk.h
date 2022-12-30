@@ -13,7 +13,7 @@ extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 extern ECS_COMPONENT_DECLARE(VkSurfaceKHR);
 
 // Physical device
-typedef VkPhysicalDevice SelectedPhysicalDevice;
+typedef ecs_entity_t SelectedPhysicalDevice;
 typedef VkExtensionProperties* VkExtensionPropertiesArr;
 typedef VkQueueFamilyProperties* VkQueueFamilyPropertiesArr;
 

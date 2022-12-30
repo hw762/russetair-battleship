@@ -134,8 +134,8 @@ ecs_entity_t selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system)
         if (hasKHRSwapchainExt && hasGraphicsQueueFamily) {
             ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", device, p.deviceName);
             ecs_iter_fini(&it);
-            ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &device);
             selected = physDevice;
+            ecs_set_ptr(ecs, system, SelectedPhysicalDevice, &selected);
             break;
         } else {
             ecs_trace("IGNORED VkPhysicalDevice = %#p, [%s]", device, p.deviceName);

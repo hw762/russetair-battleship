@@ -24,13 +24,11 @@ createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, 
 
 int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
 {
-    ecs_entity_t ePhys
-        = ecs_get_target(ecs, eDevice, EcsChildOf, 0);
-    VkPhysicalDevice phys = *ecs_get(ecs, ePhys, VkPhysicalDevice);
+    VkPhysicalDevice phys = *ecs_get(ecs, eDevice, VkPhysicalDevice);
     VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
     ecs_dbg("VkPhysicalDevice = %#p, VkDevice = %#p", phys, device);
 
-    VkQueueFamilyPropertiesArr props = *ecs_get(ecs, ePhys, VkQueueFamilyPropertiesArr);
+    VkQueueFamilyPropertiesArr props = *ecs_get(ecs, eDevice, VkQueueFamilyPropertiesArr);
     for (int i = 0; i < arrlen(props); ++i) {
         if (props[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
             ecs_trace("Found graphics queue family index [%d]", i);
@@ -43,16 +41,16 @@ int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
 
 /* The constructor */
 
-ecs_entity_t createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
+void createLogicalDevice(ecs_world_t* ecs, ecs_entity_t eDevice)
 {
     ecs_trace("Spawning VkLogicalDevice entities");
     ecs_log_push();
 
-    VkPhysicalDevice physDevice = *ecs_get(ecs, physDeviceEntity, VkPhysicalDevice);
+    VkPhysicalDevice physDevice = *ecs_get(ecs, eDevice, VkPhysicalDevice);
     ecs_trace("Selected physical device %#p", physDevice);
     VkPhysicalDeviceFeatures features = { 0 };
     VkQueueFamilyPropertiesArr queueProps
-        = *ecs_get(ecs, physDeviceEntity, VkQueueFamilyPropertiesArr);
+        = *ecs_get(ecs, eDevice, VkQueueFamilyPropertiesArr);
     int nQueues = arrlen(queueProps);
 
     VkDeviceQueueCreateInfo queueCI[nQueues];
@@ -87,12 +85,7 @@ ecs_entity_t createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity
         exit(1);
     }
     ecs_trace("Done creating VkDevice = %#p", device);
-    ecs_entity_t e = ecs_new_id(ecs);
-    ecs_add(ecs, e, LogicalDevice);
-    ecs_set_ptr(ecs, e, VkDevice, &device);
-    ecs_add_pair(ecs, e, EcsChildOf, physDeviceEntity);
+    ecs_set_ptr(ecs, eDevice, VkDevice, &device);
 
     ecs_log_pop();
-
-    return e;
 }

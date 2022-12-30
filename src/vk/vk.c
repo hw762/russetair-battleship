@@ -95,12 +95,12 @@ ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     // Populate physical device
     createPhysicalDevices(ecs, e, instance);
     // Choose the best one
-    ecs_entity_t physDevice = selectPhysicalDevice(ecs, e);
+    ecs_entity_t selectedDevice = selectPhysicalDevice(ecs, e);
     // Create logical device
-    ecs_entity_t device = createLogicalDevice(ecs, physDevice);
+    createLogicalDevice(ecs, selectedDevice);
     // Create graphics queue
-    int graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(ecs, device);
-    ecs_entity_t graphicsQueue = createDeviceQueue(ecs, device, graphicsQueueFamilyIndex, 0);
+    int graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(ecs, selectedDevice);
+    ecs_entity_t graphicsQueue = createDeviceQueue(ecs, selectedDevice, graphicsQueueFamilyIndex, 0);
     ecs_add(ecs, graphicsQueue, GraphicsQueue);
     ecs_log_pop();
     return e;

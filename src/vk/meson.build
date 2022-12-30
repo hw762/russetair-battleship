@@ -3,4 +3,5 @@ vk_src = files(
     'instance.c',
     'physical_device.c',
     'logical_device.c',
+    'swapchain.c',
 )
