@@ -7,6 +7,40 @@ static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
+static ecs_entity_t
+_createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, int queueIndex)
+{
+    VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
+    ecs_trace("Creating queue on device [%#p]", device);
+    ecs_log_push();
+    VkQueue q;
+    vkGetDeviceQueue(device, queueFamilyIndex, queueIndex, &q);
+    ecs_entity_t eQueue = ecs_new_id(ecs);
+    ecs_set_ptr(ecs, eQueue, VkQueue, &q);
+    ecs_log_pop();
+    return eQueue;
+}
+
+static int
+_getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
+{
+    ecs_entity_t ePhys
+        = ecs_get_target(ecs, eDevice, EcsChildOf, 0);
+    VkPhysicalDevice phys = *ecs_get(ecs, ePhys, VkPhysicalDevice);
+    VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
+    ecs_dbg("VkPhysicalDevice = %#p, VkDevice = %#p", phys, device);
+
+    VkQueueFamilyPropertiesArr props = *ecs_get(ecs, ePhys, VkQueueFamilyPropertiesArr);
+    for (int i = 0; i < arrlen(props); ++i) {
+        if (props[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
+            ecs_trace("Found graphics queue family index [%d]", i);
+            return i;
+        }
+    }
+    ecs_trace("Not finding graphics queue family");
+    return -1;
+}
+
 /* The constructor */
 
 ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity)
@@ -56,6 +90,10 @@ ecs_entity_t _createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntit
     ecs_entity_t e = ecs_new_id(ecs);
     ecs_set_ptr(ecs, e, VkDevice, &device);
     ecs_add_pair(ecs, e, EcsChildOf, physDeviceEntity);
+
+    int graphicsQueueFamilyIndex = _getGraphicsQueueFamilyIndex(ecs, e);
+
     ecs_log_pop();
+
     return e;
 }

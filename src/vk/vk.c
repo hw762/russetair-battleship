@@ -73,7 +73,7 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
 }
 
-ecs_entity_t createVulkanSystem(ecs_world_t* ecs,
+ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions)
 {
     ecs_trace("Creating Vulkan Instance");
@@ -94,4 +94,10 @@ ecs_entity_t createVulkanSystem(ecs_world_t* ecs,
     ecs_entity_t logicalDevice = _createLogicalDevice(ecs, physDevice);
     ecs_log_pop();
     return e;
+}
+
+void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eInstance, VkSurfaceKHR surface)
+{
+    ecs_trace("VkSurfaceKHR = %#p", surface);
+    ecs_set_ptr(ecs, eInstance, VkSurfaceKHR, &surface);
 }

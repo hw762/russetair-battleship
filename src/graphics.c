@@ -46,9 +46,14 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         ecs_fatal("Failed to get required extensions: %s", SDL_GetError());
         exit(1);
     }
-    ecs_entity_t instance = createVulkanSystem(ecs, extensions, n_extensions);
+    ecs_entity_t instance = createVulkanInstanceAndDevices(ecs, extensions, n_extensions);
     ecs_add_pair(ecs, instance, EcsChildOf, e);
-
     free(extensions);
+    VkSurfaceKHR surface;
+    if (!SDL_Vulkan_CreateSurface(*window_p, *ecs_get(ecs, instance, VkInstance), &surface)) {
+        ecs_fatal("Failed to create Vulkan surface: %s", SDL_GetError());
+    }
+    setupVulkanSurface(ecs, instance, surface);
+
     return e;
 }

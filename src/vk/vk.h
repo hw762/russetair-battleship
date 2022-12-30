@@ -50,5 +50,11 @@ void registerVulkan(ecs_world_t* ecs);
 /// @brief Create a Vulkan instance, select physical device, and create logical device.
 /// @param ecs
 /// @return Vulkan system
-ecs_entity_t createVulkanSystem(ecs_world_t* ecs,
+ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     const char** extensions, uint32_t n_extensions);
+
+/// @brief Sets up a surface
+/// @param ecs
+/// @param eInstance
+/// @param surface
+void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eInstance, VkSurfaceKHR surface);
