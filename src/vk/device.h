@@ -3,16 +3,4 @@
 #include <flecs.h>
 #include <vulkan/vulkan.h>
 
-void createPhysicalDevices(ecs_world_t* ecs, ecs_entity_t parent, VkInstance instance);
-/// @brief Select the best physical device for vulkan system
-/// TODO select best instead of first
-/// @param ecs
-/// @param system
-/// @return the selected physical device
-ecs_entity_t selectPhysicalDevice(ecs_world_t* ecs, ecs_entity_t system);
-
-/// @brief Add logical device to physical device entity
-void createLogicalDevice(ecs_world_t* ecs, ecs_entity_t physDeviceEntity);
-
-ecs_entity_t createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, int queueIndex);
-int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice);
+void createDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem);

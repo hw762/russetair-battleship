@@ -175,9 +175,8 @@ static const char* _requiredExtensions[] = {
 };
 
 ecs_entity_t
-createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, int queueIndex)
+createDeviceQueue(ecs_world_t* ecs, ecs_entity_t parent, VkDevice device, int queueFamilyIndex, int queueIndex)
 {
-    VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
     ecs_trace("Creating queue family [%d] index [%d] on device [%#p]",
         queueFamilyIndex, queueIndex, device);
     ecs_log_push();
@@ -189,13 +188,8 @@ createDeviceQueue(ecs_world_t* ecs, ecs_entity_t eDevice, int queueFamilyIndex, 
     return eQueue;
 }
 
-int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
+int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, VkPhysicalDevice phys, VkDevice device, VkQueueFamilyPropertiesArr props)
 {
-    VkPhysicalDevice phys = *ecs_get(ecs, eDevice, VkPhysicalDevice);
-    VkDevice device = *ecs_get(ecs, eDevice, VkDevice);
-    ecs_dbg("VkPhysicalDevice = %#p, VkDevice = %#p", phys, device);
-
-    VkQueueFamilyPropertiesArr props = *ecs_get(ecs, eDevice, VkQueueFamilyPropertiesArr);
     for (int i = 0; i < arrlen(props); ++i) {
         if (props[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
             ecs_trace("Found graphics queue family index [%d]", i);
@@ -208,16 +202,16 @@ int getGraphicsQueueFamilyIndex(ecs_world_t* ecs, ecs_entity_t eDevice)
 
 /* The constructor */
 
-void createLogicalDevice(ecs_world_t* ecs, ecs_entity_t eDevice)
+void createLogicalDevice(ecs_world_t* ecs, ecs_entity_t parent, ecs_entity_t ePhysicalDevice)
 {
     ecs_trace("Spawning VkLogicalDevice entities");
     ecs_log_push();
 
-    VkPhysicalDevice physDevice = *ecs_get(ecs, eDevice, VkPhysicalDevice);
+    VkPhysicalDevice physDevice = *ecs_get(ecs, ePhysicalDevice, VkPhysicalDevice);
     ecs_trace("Selected physical device %#p", physDevice);
     VkPhysicalDeviceFeatures features = { 0 };
     VkQueueFamilyPropertiesArr queueProps
-        = *ecs_get(ecs, eDevice, VkQueueFamilyPropertiesArr);
+        = *ecs_get(ecs, ePhysicalDevice, VkQueueFamilyPropertiesArr);
     int nQueues = arrlen(queueProps);
 
     VkDeviceQueueCreateInfo queueCI[nQueues];
@@ -252,7 +246,26 @@ void createLogicalDevice(ecs_world_t* ecs, ecs_entity_t eDevice)
         exit(1);
     }
     ecs_trace("Done creating VkDevice = %#p", device);
-    ecs_set_ptr(ecs, eDevice, VkDevice, &device);
+    ecs_set_ptr(ecs, parent, VkDevice, &device);
 
     ecs_log_pop();
+}
+
+void createDevice(ecs_world_t* ecs, ecs_entity_t eVulkanSystem)
+{
+    VkInstance instance = *ecs_get(ecs, eVulkanSystem, VkInstance);
+    // Populate physical device
+    createPhysicalDevices(ecs, eVulkanSystem, instance);
+    // Choose the best one
+    ecs_entity_t selectedDevice = selectPhysicalDevice(ecs, eVulkanSystem);
+    VkPhysicalDevice physDev = *ecs_get(ecs, selectedDevice, VkPhysicalDevice);
+    // Create logical device
+    createLogicalDevice(ecs, eVulkanSystem, selectedDevice);
+    VkDevice device = *ecs_get(ecs, eVulkanSystem, VkDevice);
+    VkQueueFamilyPropertiesArr props = *ecs_get(ecs, selectedDevice, VkQueueFamilyPropertiesArr);
+    // Create graphics queue
+    int graphicsQueueFamilyIndex
+        = getGraphicsQueueFamilyIndex(ecs, physDev, device, props);
+    ecs_entity_t graphicsQueue = createDeviceQueue(ecs, eVulkanSystem, device, graphicsQueueFamilyIndex, 0);
+    ecs_add(ecs, graphicsQueue, GraphicsQueue);
 }

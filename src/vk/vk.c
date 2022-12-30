@@ -91,16 +91,7 @@ ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     // Setup messenger
     VkDebugUtilsMessengerEXT messenger = newVkDebugUtilsMessengerEXT(instance);
     ecs_set_ptr(ecs, e, VkDebugUtilsMessengerEXT, &messenger);
-    // Populate physical device
-    createPhysicalDevices(ecs, e, instance);
-    // Choose the best one
-    ecs_entity_t selectedDevice = selectPhysicalDevice(ecs, e);
-    // Create logical device
-    createLogicalDevice(ecs, selectedDevice);
-    // Create graphics queue
-    int graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(ecs, selectedDevice);
-    ecs_entity_t graphicsQueue = createDeviceQueue(ecs, selectedDevice, graphicsQueueFamilyIndex, 0);
-    ecs_add(ecs, graphicsQueue, GraphicsQueue);
+    createDevice(ecs, e);
     ecs_log_pop();
     return e;
 }
