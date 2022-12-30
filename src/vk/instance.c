@@ -48,13 +48,13 @@ static const char** _getValidationLayers()
     const char** layers = NULL;
     uint32_t count;
     if (vkEnumerateInstanceLayerProperties(&count, NULL) != VK_SUCCESS) {
-        ecs_fatal("Failed to enumerate number of instance layer properties");
-        exit(1);
+        ecs_abort(1, "Failed to enumerate number of instance layer properties");
+        
     }
     VkLayerProperties* props = malloc(sizeof(*props) * count);
     if (vkEnumerateInstanceLayerProperties(&count, props) != VK_SUCCESS) {
-        ecs_fatal("Failed to enumerate instance layer properties");
-        exit(1);
+        ecs_abort(1, "Failed to enumerate instance layer properties");
+        
     }
     for (uint32_t i = 0; i < count; ++i) {
         ecs_trace("Supported validation layer [%s]: %s", props[i].layerName, props[i].description);
@@ -111,13 +111,13 @@ VkDebugUtilsMessengerEXT newVkDebugUtilsMessengerEXT(VkInstance instance)
             instance,
             "vkCreateDebugUtilsMessengerEXT");
     if (!create) {
-        ecs_fatal("Failed to load debug extension");
-        exit(1);
+        ecs_abort(1, "Failed to load debug extension");
+        
     }
     VkDebugUtilsMessengerEXT messenger;
     if (create(instance, &_debug_utils_messenger_create_info_ext, NULL, &messenger) != VK_SUCCESS) {
-        ecs_fatal("Failed to create debug messenger");
-        exit(1);
+        ecs_abort(1, "Failed to create debug messenger");
+        
     }
     ecs_trace("Done setting up messenger");
     ecs_log_pop();
@@ -153,8 +153,8 @@ VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
     VkInstance instance;
     vkCheck(vkCreateInstance(&ci, NULL, &instance))
     {
-        ecs_fatal("Failed to created Vulkan instance");
-        exit(1);
+        ecs_abort(1, "Failed to created Vulkan instance");
+        
     }
     arrfree(extensions);
     arrfree(layers);

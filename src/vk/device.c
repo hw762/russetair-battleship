@@ -20,16 +20,14 @@ static VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
     uint32_t count;
     vkCheck(vkEnumeratePhysicalDevices(instance, &count, NULL))
     {
-        ecs_fatal("Failed to enumerate number of physical devices");
-        exit(1);
+        ecs_abort(1, "Failed to enumerate number of physical devices");
     }
     ecs_trace("Found [%d] physical devices", count);
     VkPhysicalDevice* p = NULL;
     arrsetlen(p, count);
     vkCheck(vkEnumeratePhysicalDevices(instance, &count, p))
     {
-        ecs_fatal("Failed to enumerate physical devices");
-        exit(1);
+        ecs_abort(1, "Failed to enumerate physical devices");
     }
     return p;
 }
@@ -49,15 +47,13 @@ _addPhysicalDeviceExtensionProperties(ecs_world_t* ecs, ecs_entity_t e, VkPhysic
     uint32_t n_exts;
     vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, NULL))
     {
-        ecs_fatal("Failed to get number of device extension properties");
-        exit(1);
+        ecs_abort(1, "Failed to get number of device extension properties");
     }
     VkExtensionPropertiesArr exts = NULL;
     arrsetlen(exts, n_exts);
     vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, exts))
     {
-        ecs_fatal("Failed to get device extension properties");
-        exit(1);
+        ecs_abort(1, "Failed to get device extension properties");
     }
     ecs_set_ptr(ecs, e, VkExtensionPropertiesArr, &exts);
 }
@@ -243,8 +239,7 @@ static void _setupLogicalDevice(ecs_world_t* ecs, ecs_entity_t parent, ecs_entit
     VkDevice device;
     vkCheck(vkCreateDevice(physDevice, &deviceCI, NULL, &device))
     {
-        ecs_fatal("Failed to create logical device");
-        exit(1);
+        ecs_abort(1, "Failed to create logical device");
     }
     ecs_trace("Done creating VkDevice = %#p", device);
     ecs_set_ptr(ecs, parent, VkDevice, &device);

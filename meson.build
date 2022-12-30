@@ -2,6 +2,8 @@ project('russetair-battleship', 'c',
   version : '0.1',
   default_options : ['warning_level=3', 'c_std=gnu17'])
 
+cc = meson.get_compiler('c')
+
 add_global_arguments([
   '-Werror=discarded-qualifiers', 
   '-Werror=incompatible-pointer-types',
@@ -26,6 +28,7 @@ sqlite3_dep = dependency('sqlite3')
 
 # Others
 stb_dep = dependency('stb')
+m_dep = cc.find_library('m', required : false)
 
 subdir('src')
 
@@ -48,6 +51,7 @@ exe = executable('c_battleship', [
     assimp_dep,
     sqlite3_dep,
     stb_dep,
+    m_dep,
   ],
   include_directories : [
     src_inc,

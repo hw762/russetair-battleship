@@ -33,27 +33,26 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         PROJECT_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         1280, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN /* FIXME Hide until we can draw something */);
     if (!*window_p) {
-        ecs_fatal("SDL init failed: %s", SDL_GetError());
-        exit(1);
+        ecs_abort(1, "SDL init failed: %s", SDL_GetError());
     }
 
     if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, NULL)) {
-        ecs_fatal("Failed to get number of required extensions: %s", SDL_GetError());
-        exit(1);
+        ecs_abort(1, "Failed to get number of required extensions: %s", SDL_GetError());
     }
     extensions = malloc(sizeof(const char*) * n_extensions);
     if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, extensions)) {
-        ecs_fatal("Failed to get required extensions: %s", SDL_GetError());
-        exit(1);
+        ecs_abort(1, "Failed to get required extensions: %s", SDL_GetError());
     }
     ecs_entity_t instance = createVulkanInstanceAndDevices(ecs, extensions, n_extensions);
     ecs_add_pair(ecs, instance, EcsChildOf, e);
     free(extensions);
     VkSurfaceKHR surface;
     if (!SDL_Vulkan_CreateSurface(*window_p, *ecs_get(ecs, instance, VkInstance), &surface)) {
-        ecs_fatal("Failed to create Vulkan surface: %s", SDL_GetError());
+        ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
     }
     setupVulkanSurface(ecs, instance, surface);
+    // TODO: settings
+    setupSwapchain(ecs, instance, 3, true, 1280, 720);
 
     return e;
 }

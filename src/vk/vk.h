@@ -33,7 +33,8 @@ extern ECS_DECLARE(GraphicsQueue);
 extern ECS_COMPONENT_DECLARE(VkQueue);
 
 // Surface
-extern ECS_COMPONENT_DECLARE(VkImageView);
+typedef VkImageView* VkImageViewArr;
+extern ECS_COMPONENT_DECLARE(VkImageViewArr);
 extern ECS_COMPONENT_DECLARE(VkFramebuffer);
 
 // Pipeline
@@ -61,3 +62,9 @@ ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
 /// @param eInstance
 /// @param surface
 void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eInstance, VkSurfaceKHR surface);
+
+void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
+    int requestedImages, bool vsync,
+    uint32_t defaultWidth, uint32_t defaultHeight);
+
+void cleanupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem);

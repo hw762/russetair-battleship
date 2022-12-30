@@ -6,8 +6,7 @@
 
 #include "device.h"
 #include "instance.h"
-
-#include <vulkan/vulkan.h>
+#include "swapchain.h"
 
 ECS_DECLARE(VulkanSystem);
 ECS_COMPONENT_DECLARE(VkInstance);
@@ -28,7 +27,7 @@ ECS_COMPONENT_DECLARE(VkDevice);
 ECS_DECLARE(GraphicsQueue);
 ECS_COMPONENT_DECLARE(VkQueue);
 
-ECS_COMPONENT_DECLARE(VkImageView);
+ECS_COMPONENT_DECLARE(VkImageViewArr);
 ECS_COMPONENT_DECLARE(VkFramebuffer);
 
 ECS_COMPONENT_DECLARE(VkPipeline);
@@ -63,7 +62,7 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_TAG_DEFINE(ecs, GraphicsQueue);
     ECS_COMPONENT_DEFINE(ecs, VkQueue);
 
-    ECS_COMPONENT_DEFINE(ecs, VkImageView);
+    ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
     ECS_COMPONENT_DEFINE(ecs, VkFramebuffer);
 
     ECS_COMPONENT_DEFINE(ecs, VkPipeline);
@@ -96,8 +95,9 @@ ecs_entity_t createVulkanInstanceAndDevices(ecs_world_t* ecs,
     return e;
 }
 
-void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eInstance, VkSurfaceKHR surface)
+void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eSystem, VkSurfaceKHR surface)
 {
+    assert(ecs_has(ecs, eSystem, VulkanSystem));
     ecs_trace("VkSurfaceKHR = %#p", surface);
-    ecs_set_ptr(ecs, eInstance, VkSurfaceKHR, &surface);
+    ecs_set_ptr(ecs, eSystem, VkSurfaceKHR, &surface);
 }
