@@ -1,6 +1,6 @@
 #include "vk.h"
 
-#include <stb/stb_ds.h>
+#include <stb_ds.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 

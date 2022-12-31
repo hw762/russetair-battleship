@@ -1,7 +1,7 @@
 #include "device.h"
 #include "vk.h"
 
-#include <stb/stb_ds.h>
+#include <stb_ds.h>
 
 /// @brief Name of the `VkPhysicalDeviceType` enum.
 static const char* PHYSICAL_DEVICE_TYPES[] = {

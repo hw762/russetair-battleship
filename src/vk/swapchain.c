@@ -1,7 +1,7 @@
 #include "swapchain.h"
 #include "vk.h"
 
-#include <stb/stb_ds.h>
+#include <stb_ds.h>
 #include <utils/math.h>
 
 typedef struct {
