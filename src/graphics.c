@@ -2,6 +2,7 @@
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
+#include <stb_ds.h>
 
 #include "vk/vk.h"
 
@@ -58,8 +59,13 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     CommandPool pool = newCommandPool(&instance.renderDevice);
     CommandBuffer cmdBuf = newCommandBuffer(&pool);
 
+    // Pre-record clears
+    for (int i = 0; i < arrlen(swapchain.arrViews); ++i) {
+        commandBufferRecordClear(&cmdBuf, &swapchain.arrViews[i], w, h);
+    }
+    // Render to screen
     swapchainAcquire(&swapchain);
-    commandBufferRecordClear(&cmdBuf, swapchainCurrentView(&swapchain), w, h);
+    // TODO: queue submit
     swapchainPresent(&swapchain, instance.renderDevice.queue);
 
     return e;
