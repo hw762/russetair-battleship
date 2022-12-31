@@ -8,7 +8,8 @@ add_global_arguments([
   '-Werror=incompatible-pointer-types',
   '-Werror=uninitialized',
   '-Werror=return-type',
-  '-Wno-missing-field-initializers'
+  '-Wno-missing-field-initializers',
+  '-Wno-newline-eof',
   ], language: 'c')
 
 cmake = import('cmake')
