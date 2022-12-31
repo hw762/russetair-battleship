@@ -3,4 +3,5 @@ vk_src = files(
     'instance.c',
     'device.c',
     'swapchain.c',
+    'pipeline.c',
 )

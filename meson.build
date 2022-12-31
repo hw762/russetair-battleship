@@ -31,7 +31,7 @@ sqlite3_dep = dependency('sqlite3')
 m_dep = cc.find_library('m', required : false)
 
 subdir('src')
-flecs_subproject = subproject('flecs')
+flecs_subproject = subproject('flecs', default_options: ['default_library=static'])
 flecs_dep = flecs_subproject.get_variable('flecs_dep')
 thirdparty_src = files(
   'thirdparty/stb/stb.c'
