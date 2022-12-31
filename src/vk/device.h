@@ -19,5 +19,6 @@ typedef struct RenderDevice {
     Queue presentQueue;
 } RenderDevice;
 
-RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices);
 void queueSubmit(const RenderDevice* device, const CommandBuffer* cmdBuf, VkSemaphore waitSemaphore, int dstStageMask, VkSemaphore signalSemaphore, VkFence fence);
+
+RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices);
