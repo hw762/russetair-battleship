@@ -2,6 +2,7 @@ use std::iter::once;
 
 use wgpu::*;
 use winit::window::Window;
+
 pub struct GraphicsSystem {
     instance: Instance,
     surface: Surface,
@@ -28,7 +29,7 @@ impl GraphicsSystem {
             .request_device(
                 &DeviceDescriptor {
                     label: Some("Device"),
-                    features: Features::empty(),
+                    features: Features::PUSH_CONSTANTS,
                     limits: Limits::default(),
                 },
                 None,
@@ -53,6 +54,14 @@ impl GraphicsSystem {
             size,
         }
     }
+    pub fn device(&self) -> &Device {
+        &self.device
+    }
+    pub fn encoder(&self, label: Option<&str>) -> CommandEncoder {
+        self.device.create_command_encoder(&CommandEncoderDescriptor {
+            label
+        })
+    }
     pub fn clear(&mut self) {
         let output = self
             .surface
@@ -61,11 +70,7 @@ impl GraphicsSystem {
         let view = output
             .texture
             .create_view(&TextureViewDescriptor::default());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor {
-                label: Some("ClearEncoder"),
-            });
+        let mut encoder = self.encoder(Some("ClearEncoder"));
         encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("ClearRenderPass"),
             color_attachments: &[Some(RenderPassColorAttachment {
@@ -86,5 +91,19 @@ impl GraphicsSystem {
 
         self.queue.submit(once(encoder.finish()));
         output.present();
+    }
+}
+
+pub struct Camera {
+    transform: uv::Mat4,
+}
+
+impl Camera {
+    pub fn new() -> Self {
+        // HACK Move to (0, 0, -1)
+        let transform = uv::Mat4::from_translation(uv::Vec3::new(0., 0., -1.0));
+        Self {
+            transform
+        }
     }
 }
