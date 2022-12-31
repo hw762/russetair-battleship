@@ -34,11 +34,14 @@ extern ECS_COMPONENT_DECLARE(VkQueue);
 extern ECS_TAG_DECLARE(QueueIsGraphics);
 
 // Swapchain
+struct SurfaceFormat;
+typedef struct SurfaceFormat SurfaceFormat;
 typedef VkImageView* VkImageViewArr;
 extern ECS_PREFAB_DECLARE(Swapchain);
 extern ECS_COMPONENT_DECLARE(VkImageViewArr);
 extern ECS_COMPONENT_DECLARE(VkSwapchainKHR);
 extern ECS_COMPONENT_DECLARE(VkFramebuffer);
+extern ECS_COMPONENT_DECLARE(SurfaceFormat);
 
 // Pipeline
 extern ECS_PREFAB_DECLARE(GraphicsPipeline);

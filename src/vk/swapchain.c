@@ -8,19 +8,16 @@ ECS_PREFAB_DECLARE(Swapchain);
 ECS_COMPONENT_DECLARE(VkImageViewArr);
 ECS_COMPONENT_DECLARE(VkFramebuffer);
 ECS_COMPONENT_DECLARE(VkSwapchainKHR);
+ECS_COMPONENT_DECLARE(SurfaceFormat);
 
 void registerSwapchain(ecs_world_t* ecs)
 {
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
     ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
     ECS_COMPONENT_DEFINE(ecs, VkFramebuffer);
-    ECS_PREFAB_DEFINE(ecs, Swapchain, VkSwapchainKHR, VkImageViewArr, VkFramebuffer);
+    ECS_COMPONENT_DEFINE(ecs, SurfaceFormat);
+    ECS_PREFAB_DEFINE(ecs, Swapchain, VkSwapchainKHR, VkImageViewArr, VkFramebuffer, SurfaceFormat);
 }
-
-typedef struct {
-    int imageFormat;
-    int colorSpace;
-} SurfaceFormat;
 
 static VkSurfaceCapabilitiesKHR
 _getSurfaceCapabilitiesKHR(VkPhysicalDevice phys, VkSurfaceKHR surface)
@@ -137,7 +134,7 @@ _VkImageView(VkDevice device, VkImage image, ImageViewData data)
 }
 
 static void
-_setupImageViews(ecs_world_t* ecs, ecs_entity_t eSystem,
+_setupImageViews(ecs_world_t* ecs, ecs_entity_t eSwapchain,
     VkDevice device, VkSwapchainKHR swapchain, int format)
 {
     uint32_t count;
@@ -161,13 +158,14 @@ _setupImageViews(ecs_world_t* ecs, ecs_entity_t eSystem,
         views[i] = _VkImageView(device, images[i], data);
         ecs_trace("Created VkImageView = %#p", images[i]);
     }
-    ecs_set_ptr(ecs, eSystem, VkImageViewArr, views);
+    ecs_set_ptr(ecs, eSwapchain, VkImageViewArr, views);
 }
 
 void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
     int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight)
 {
     assert(ecs_has_pair(ecs, eSystem, EcsIsA, VulkanSystem));
+    ecs_entity_t e = ecs_get_target(ecs, eSystem, Swapchain, 0);
 
     VkSurfaceKHR surface = *ecs_get(ecs, eSystem, VkSurfaceKHR);
     ecs_entity_t eSelected = *ecs_get(ecs, eSystem, SelectedPhysicalDevice);
@@ -206,9 +204,10 @@ void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
         ecs_abort(1, "Failed to create swapchain");
     }
     ecs_trace("VkSwapchainKHR = %#p", swapchain);
-    ecs_set_ptr(ecs, eSystem, VkSwapchainKHR, &swapchain);
+    ecs_set_ptr(ecs, e, VkSwapchainKHR, &swapchain);
+    ecs_set_ptr(ecs, e, SurfaceFormat, &format);
 
-    _setupImageViews(ecs, eSystem, device, swapchain, format.imageFormat);
+    _setupImageViews(ecs, e, device, swapchain, format.imageFormat);
 
     ecs_log_pop();
 }
