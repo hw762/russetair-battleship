@@ -2,6 +2,7 @@
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
+#include <limits.h>
 #include <stb_ds.h>
 
 #include "vk/vk.h"
@@ -66,7 +67,10 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     // Render to screen
     swapchainAcquire(&swapchain);
     // TODO: queue submit
-    swapchainPresent(&swapchain, instance.renderDevice.queue);
+    const ImageView* view = swapchainCurrentView(&swapchain);
+    queueSubmit(&instance.renderDevice, &cmdBuf, view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, view->renderCompleteSemaphore, view->fence);
+
+    swapchainPresent(&swapchain, instance.renderDevice.queue.handle);
 
     return e;
 }

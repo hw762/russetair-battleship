@@ -38,7 +38,7 @@ newCommandPool(const RenderDevice* device)
     VkCommandPoolCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = device->queueFamilyIndex
+        .queueFamilyIndex = device->queue.queueFamilyIndex
     };
     VkCommandPool commandPool;
     vkCheck(vkCreateCommandPool(device->handle, &ci, NULL, &commandPool))
