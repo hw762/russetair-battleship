@@ -1,6 +1,6 @@
 #include "vk.h"
 
-#include <stb/stb_ds.h>
+#include <stb_ds.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 
@@ -113,4 +113,3 @@ void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eSystem, VkSurfaceKHR sur
     ecs_trace("VkSurfaceKHR = %#p", surface);
     ecs_set_ptr(ecs, eSystem, VkSurfaceKHR, &surface);
 }
-
