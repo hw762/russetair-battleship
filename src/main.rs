@@ -1,9 +1,12 @@
+use hecs::World;
 use graphics::GraphicsSystem;
 use winit::{event_loop::{EventLoop, ControlFlow}, event::{WindowEvent, Event, KeyboardInput, ElementState, VirtualKeyCode}};
 
 mod graphics;
 
 fn main() {
+    let mut world = World::new();
+    let _ = world.spawn(("Hello", 0));
     // HACK: The entire main function is a hack.
     let event_loop = EventLoop::new();
     let window = winit::window::Window::new(&event_loop).unwrap();
