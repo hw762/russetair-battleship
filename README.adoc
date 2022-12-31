@@ -4,7 +4,7 @@
 
 Use WebKit style to cope with the extremely long names of the Vulkan API. Structs follow the `typedef {} CamelCase` convention for the above reason and for compatibility with flecs.
 
-All identifiers use `camelCase`, while data types use `PascalCase`. What act as a constructor follow `_PascalCase` or `newPascalCase`. Private identifiers start with underscore.
+All identifiers use `camelCase`, while data types use `PascalCase`. What act as a constructor follow `_PascalCase` or `newPascalCase`. Private identifiers start with underscore. Special naming conventions: pointers with `p`, and STB arrays with `arr`.
 
 ECS entities spawn with `spawnEntityName` and end with `cleanupEntityName`. `setupSubsystem` refers to when only components are updated.
 If entity is supposed to be "system-level", such as graphics system, vulkan system, etc, use `createEntityName` instead.
@@ -29,6 +29,10 @@ If entity is supposed to be "system-level", such as graphics system, vulkan syst
 - [ ] Triangle
 - [ ] Select best device instead of first device
 - [ ] Proper cleanup
+
+Workflow:
+
+For each material, record corresponding command buffer, submit to queue
 
 === 2D Debugger
 

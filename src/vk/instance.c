@@ -8,18 +8,6 @@
 extern const char* PROJECT_NAME;
 extern const char* ENGINE_NAME;
 
-ECS_DECLARE(VulkanInstance);
-ECS_COMPONENT_DECLARE(VkInstance);
-ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
-
-void registerInstance(ecs_world_t* ecs)
-{
-    ECS_TAG_DEFINE(ecs, VulkanInstance);
-    ECS_COMPONENT_DEFINE(ecs, VkInstance);
-    ECS_COMPONENT_DEFINE(ecs, VkDebugUtilsMessengerEXT);
-    ECS_PREFAB_DEFINE(ecs, VulkanInstance, VkInstance, VkDebugUtilsMessengerEXT);
-}
-
 static VKAPI_ATTR VkBool32 VKAPI_CALL _vkDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
