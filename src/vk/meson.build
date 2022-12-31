@@ -4,5 +4,5 @@ vk_src = files(
     'physical_device.c',
     'device.c',
     'swapchain.c',
-    'render_pass.c',
+    'pipeline.c',
 )

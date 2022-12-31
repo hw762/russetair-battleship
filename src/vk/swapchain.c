@@ -120,12 +120,12 @@ _VkImageView(VkDevice device, VkImage image, ImageViewData data)
     return view;
 }
 
-static VkImageView*
+static ImageView*
 _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
 {
     uint32_t count;
     VkImage* images = NULL;
-    VkImageView* views = NULL;
+    ImageView* views = NULL;
 
     vkCheck(vkGetSwapchainImagesKHR(device, swapchain, &count, NULL))
     {
@@ -141,8 +141,36 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
     data.format = format;
     data.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     for (uint32_t i = 0; i < count; ++i) {
-        views[i] = _VkImageView(device, images[i], data);
-        ecs_trace("Created VkImageView = %#p", images[i]);
+        VkFenceCreateInfo ci = {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT
+        };
+        VkFence fence;
+        vkCheck(vkCreateFence(device, &ci, NULL, &fence))
+        {
+            ecs_abort(1, "Failed to create fence");
+        }
+        VkSemaphoreCreateInfo semaphoreCI = {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        };
+        VkSemaphore imgAcquisitionSemaphore, renderCompleteSemaphore;
+        vkCheck(vkCreateSemaphore(device, &semaphoreCI, NULL, &imgAcquisitionSemaphore))
+        {
+            ecs_abort(1, "Failed to create image acquisition semaphore");
+        }
+        vkCheck(vkCreateSemaphore(device, &semaphoreCI, NULL, &renderCompleteSemaphore))
+        {
+            ecs_abort(1, "Failed to create render complete semaphore");
+        }
+        VkImageView imgView = _VkImageView(device, images[i], data);
+        views[i]
+            = (ImageView) {
+                  .handle = imgView,
+                  .fence = fence,
+                  .acquisitionSemaphore = imgAcquisitionSemaphore,
+                  .renderCompleteSemaphore = renderCompleteSemaphore
+              };
+        ecs_trace("Created VkImageView = %#p, VkFence = %#p", imgView, fence);
     }
     return views;
 }
@@ -188,7 +216,7 @@ newSwapchain(const RenderDevice* renderDevice, VkSurfaceKHR surface,
     }
     ecs_trace("VkSwapchainKHR = %#p", swapchain);
 
-    VkImageView* views = _newImageViews(device, swapchain, format.imageFormat);
+    ImageView* views = _newImageViews(device, swapchain, format.imageFormat);
 
     ecs_log_pop();
     return (Swapchain) {
@@ -197,5 +225,50 @@ newSwapchain(const RenderDevice* renderDevice, VkSurfaceKHR surface,
         .surface = surface,
         .arrViews = views,
         .format = format,
+        .currentFrame = 0,
     };
+}
+
+const ImageView* swapchainCurrentView(const Swapchain* swapchain)
+{
+    return &swapchain->arrViews[swapchain->currentFrame];
+}
+
+bool swapchainAcquire(Swapchain* swapchain)
+{
+    bool resize = false;
+    const ImageView* view = swapchainCurrentView(swapchain);
+    switch (vkAcquireNextImageKHR(swapchain->device->handle, swapchain->handle, -0L,
+        view->acquisitionSemaphore, NULL, &swapchain->currentFrame)) {
+    case VK_ERROR_OUT_OF_DATE_KHR:
+        resize = true;
+        break;
+    case VK_SUBOPTIMAL_KHR:
+        resize = true;
+        break;
+    case VK_SUCCESS:
+        break;
+    default:
+        ecs_abort(1, "Failed to acquire image")
+    }
+
+    return resize;
+}
+
+bool swapchainPresent(Swapchain* swapchain, VkQueue queue)
+{
+    bool resize = false;
+
+    const ImageView* view = swapchainCurrentView(swapchain);
+
+    VkPresentInfoKHR presentInfo = {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pWaitSemaphores = &view->renderCompleteSemaphore,
+        .waitSemaphoreCount = 1,
+        .swapchainCount = 1,
+        .pSwapchains = &swapchain->handle,
+        .pImageIndices = &swapchain->currentFrame,
+    };
+    swapchain->currentFrame = (swapchain->currentFrame + 1) % arrlen(swapchain->arrViews);
+    return resize;
 }

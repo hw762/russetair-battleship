@@ -6,24 +6,20 @@
 #include "device.h"
 #include "instance.h"
 #include "physical_device.h"
+#include "pipeline.h"
 #include "swapchain.h"
 
 #define vkCheck(stmt) if ((stmt) != VK_SUCCESS)
 
-struct PhysicalDevice;
-typedef struct PhysicalDevice PhysicalDevice;
-struct RenderDevice;
-typedef struct RenderDevice RenderDevice;
-
-typedef struct VulkanSystem {
+typedef struct VulkanInstance {
     VkInstance instance;
     VkDebugUtilsMessengerEXT messenger;
     PhysicalDevice* arrPhysicalDevices;
     RenderDevice renderDevice;
-} VulkanSystem;
+} VulkanInstance;
 
-extern ECS_COMPONENT_DECLARE(VulkanSystem);
+extern ECS_COMPONENT_DECLARE(VulkanInstance);
 
 void registerVulkan(ecs_world_t* ecs);
 
-VulkanSystem newVulkanSystem(const char** exts, uint32_t n_exts);
+VulkanInstance newVulkanInstance(const char** exts, uint32_t n_exts);

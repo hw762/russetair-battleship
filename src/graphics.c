@@ -26,36 +26,41 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
 
     ecs_add(ecs, e, GraphicsSystem);
 
-    SDLWindowPtr* window_p = ecs_emplace(ecs, e, SDLWindowPtr);
+    SDLWindowPtr* pWindow = ecs_emplace(ecs, e, SDLWindowPtr);
     uint32_t n_extensions;
     const char** extensions = NULL;
-    *window_p = SDL_CreateWindow(
+    *pWindow = SDL_CreateWindow(
         PROJECT_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        1280, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN /* FIXME Hide until we can draw something */);
-    if (!*window_p) {
+        1280, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_ALLOW_HIGHDPI);
+    if (!*pWindow) {
         ecs_abort(1, "SDL init failed: %s", SDL_GetError());
     }
 
-    if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, NULL)) {
+    if (!SDL_Vulkan_GetInstanceExtensions(*pWindow, &n_extensions, NULL)) {
         ecs_abort(1, "Failed to get number of required extensions: %s", SDL_GetError());
     }
     extensions = malloc(sizeof(const char*) * n_extensions);
-    if (!SDL_Vulkan_GetInstanceExtensions(*window_p, &n_extensions, extensions)) {
+    if (!SDL_Vulkan_GetInstanceExtensions(*pWindow, &n_extensions, extensions)) {
         ecs_abort(1, "Failed to get required extensions: %s", SDL_GetError());
     }
     // ecs_entity_t system = ecs_new_w_pair(ecs, EcsIsA, VulkanSystem);
-    VulkanSystem system = newVulkanSystem(extensions, n_extensions);
+    VulkanInstance instance = newVulkanInstance(extensions, n_extensions);
     free(extensions);
 
-    // createVulkanPhysicalDevices(ecs, system);
-    // createVulkanRenderDevice(ecs, system);
-    // VkSurfaceKHR surface;
-    // if (!SDL_Vulkan_CreateSurface(*window_p, *ecs_get(ecs, instance, VkInstance), &surface)) {
-    //     ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
-    // }
-    // setupVulkanSurface(ecs, instance, surface);
-    // // TODO: settings
-    // setupSwapchain(ecs, instance, 3, true, 1280, 720);
+    VkSurfaceKHR surface;
+    if (!SDL_Vulkan_CreateSurface(*pWindow, instance.instance, &surface)) {
+        ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
+    }
+    int w, h;
+    SDL_Vulkan_GetDrawableSize(*pWindow, &w, &h);
+    Swapchain swapchain
+        = newSwapchain(&instance.renderDevice, surface, 3, true, w, h);
+    CommandPool pool = newCommandPool(&instance.renderDevice);
+    CommandBuffer cmdBuf = newCommandBuffer(&pool);
+
+    swapchainAcquire(&swapchain);
+    commandBufferRecordClear(&cmdBuf, swapchainCurrentView(&swapchain), w, h);
+    swapchainPresent(&swapchain, instance.renderDevice.queue);
 
     return e;
 }

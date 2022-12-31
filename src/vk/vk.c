@@ -7,16 +7,17 @@
 #include "device.h"
 #include "instance.h"
 #include "physical_device.h"
+#include "pipeline.h"
 #include "swapchain.h"
 
-ECS_COMPONENT_DECLARE(VulkanSystem);
+ECS_COMPONENT_DECLARE(VulkanInstance);
 
 void registerVulkan(ecs_world_t* ecs)
 {
-    ECS_COMPONENT_DEFINE(ecs, VulkanSystem);
+    ECS_COMPONENT_DEFINE(ecs, VulkanInstance);
 }
 
-VulkanSystem newVulkanSystem(const char** exts, uint32_t n_exts)
+VulkanInstance newVulkanInstance(const char** exts, uint32_t n_exts)
 {
     ecs_trace("Creating Vulkan Instance");
     ecs_log_push();
@@ -27,7 +28,7 @@ VulkanSystem newVulkanSystem(const char** exts, uint32_t n_exts)
     PhysicalDevice* phys = getPhysicalDevices(instance);
     RenderDevice device = newRenderDevice(phys);
     ecs_log_pop();
-    return (VulkanSystem) {
+    return (VulkanInstance) {
         .instance = instance,
         .messenger = messenger,
         .arrPhysicalDevices = phys,

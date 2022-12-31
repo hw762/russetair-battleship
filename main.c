@@ -34,6 +34,9 @@ int main()
     ecs_log_set_level(0);
 
     createGraphicsSystem(game.ecs);
+
+    for (int i = 0; i < 1000000000; ++i) {
+        }
     // spawnSector(game.ecs, 0, 0, 0, &spawnChunkDefault);
     // spawnSector(game.ecs, 0, 1, 0, &spawnChunk);
     // spawnSector(game.ecs, 1, 0, 0, NULL);

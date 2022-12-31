@@ -7,7 +7,6 @@
 
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 };
 
 static VkQueue
@@ -54,7 +53,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     VkDeviceCreateInfo deviceCI = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .ppEnabledExtensionNames = _requiredExtensions,
-        .enabledExtensionCount = 2,
+        .enabledExtensionCount = 1,
         .pEnabledFeatures = &features,
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
@@ -87,5 +86,6 @@ RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices)
         .handle = device,
         .phys = physDev,
         .queue = graphicsQueue,
+        .queueFamilyIndex = graphicsQueueFamilyIndex,
     };
 }
