@@ -8,6 +8,18 @@
 extern const char* PROJECT_NAME;
 extern const char* ENGINE_NAME;
 
+ECS_DECLARE(VulkanInstance);
+ECS_COMPONENT_DECLARE(VkInstance);
+ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
+
+void registerInstance(ecs_world_t* ecs)
+{
+    ECS_TAG_DEFINE(ecs, VulkanInstance);
+    ECS_COMPONENT_DEFINE(ecs, VkInstance);
+    ECS_COMPONENT_DEFINE(ecs, VkDebugUtilsMessengerEXT);
+    ECS_PREFAB_DEFINE(ecs, VulkanInstance, VkInstance, VkDebugUtilsMessengerEXT);
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL _vkDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -49,12 +61,10 @@ static const char** _getValidationLayers()
     uint32_t count;
     if (vkEnumerateInstanceLayerProperties(&count, NULL) != VK_SUCCESS) {
         ecs_abort(1, "Failed to enumerate number of instance layer properties");
-        
     }
     VkLayerProperties* props = malloc(sizeof(*props) * count);
     if (vkEnumerateInstanceLayerProperties(&count, props) != VK_SUCCESS) {
         ecs_abort(1, "Failed to enumerate instance layer properties");
-        
     }
     for (uint32_t i = 0; i < count; ++i) {
         ecs_trace("Supported validation layer [%s]: %s", props[i].layerName, props[i].description);
@@ -112,12 +122,10 @@ VkDebugUtilsMessengerEXT newVkDebugUtilsMessengerEXT(VkInstance instance)
             "vkCreateDebugUtilsMessengerEXT");
     if (!create) {
         ecs_abort(1, "Failed to load debug extension");
-        
     }
     VkDebugUtilsMessengerEXT messenger;
     if (create(instance, &_debug_utils_messenger_create_info_ext, NULL, &messenger) != VK_SUCCESS) {
         ecs_abort(1, "Failed to create debug messenger");
-        
     }
     ecs_trace("Done setting up messenger");
     ecs_log_pop();
@@ -154,7 +162,6 @@ VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
     vkCheck(vkCreateInstance(&ci, NULL, &instance))
     {
         ecs_abort(1, "Failed to created Vulkan instance");
-        
     }
     arrfree(extensions);
     arrfree(layers);
@@ -162,3 +169,4 @@ VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
     ecs_log_pop();
     return instance;
 }
+

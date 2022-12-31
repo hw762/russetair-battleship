@@ -8,11 +8,7 @@
 #include "instance.h"
 #include "swapchain.h"
 
-ECS_DECLARE(VulkanSystem);
-
-ECS_DECLARE(VulkanInstance);
-ECS_COMPONENT_DECLARE(VkInstance);
-ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
+ECS_PREFAB_DECLARE(VulkanSystem);
 
 ECS_DECLARE(PhysicalDevice);
 ECS_COMPONENT_DECLARE(VkPhysicalDevice);
@@ -45,11 +41,7 @@ void registerVulkan(ecs_world_t* ecs)
 {
     ECS_TAG_DEFINE(ecs, VulkanSystem);
     ECS_PREFAB_DEFINE(ecs, VulkanSystem); // Slots added at the end
-
-    ECS_TAG_DEFINE(ecs, VulkanInstance);
-    ECS_COMPONENT_DEFINE(ecs, VkInstance);
-    ECS_COMPONENT_DEFINE(ecs, VkDebugUtilsMessengerEXT);
-    ECS_PREFAB_DEFINE(ecs, VulkanInstance, VkInstance, VkDebugUtilsMessengerEXT);
+    registerInstance(ecs);
 
     ECS_TAG_DEFINE(ecs, PhysicalDevice);
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
@@ -121,3 +113,4 @@ void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eSystem, VkSurfaceKHR sur
     ecs_trace("VkSurfaceKHR = %#p", surface);
     ecs_set_ptr(ecs, eSystem, VkSurfaceKHR, &surface);
 }
+
