@@ -47,10 +47,10 @@ impl Terrain {
             ],
         })
     }
-    pub fn pipeline(&self, gfx: &GraphicsSystem) -> RenderPipeline {
-        gfx.device.create_render_pipeline(&RenderPipelineDescriptor {
+    pub fn pipeline(&self, device: &Device, format: TextureFormat) -> RenderPipeline {
+        device.create_render_pipeline(&RenderPipelineDescriptor {
             label: Some("TerrainRenderer Piipeline"),
-            layout: Some(&self.layout(&gfx.device)),
+            layout: Some(&self.layout(&device)),
             vertex: VertexState {
                 module: &self.shader,
                 entry_point: "vs_main",
@@ -78,7 +78,7 @@ impl Terrain {
                 module: &self.shader,
                 entry_point: "fs_main",
                 targets: &[Some(ColorTargetState { // 4.
-                    format: gfx.config.format,
+                    format: format,
                     blend: Some(BlendState::REPLACE),
                     write_mask: ColorWrites::ALL,
                 })],
@@ -86,11 +86,8 @@ impl Terrain {
             multiview: None,
         })
     }
-    pub fn render(&self, gfx: &GraphicsSystem) {
-        let pipeline = self.pipeline(gfx);
-        let output = gfx.surface.get_current_texture().unwrap();
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = gfx.encoder(Some("TerrainRenderer Encoder"));
+    pub fn render(&self, device: &Device, encoder: &mut CommandEncoder, view: &TextureView, format: TextureFormat) {
+        let pipeline = self.pipeline(device, format);
         let mut render_pass = encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[
@@ -117,10 +114,5 @@ impl Terrain {
         // NEW!
         render_pass.set_pipeline(&pipeline); // 2.
         render_pass.draw(0..3, 0..1); // 3.
-
-        drop(render_pass);
-
-        gfx.queue.submit(once(encoder.finish()));
-        output.present();
     }
 }

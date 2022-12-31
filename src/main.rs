@@ -1,4 +1,6 @@
+use std::iter::once;
 use hecs::*;
+use wgpu::TextureViewDescriptor;
 use terrain::*;
 
 use graphics::GraphicsSystem;
@@ -19,7 +21,12 @@ fn main() {
     let mut graphics = pollster::block_on(GraphicsSystem::new(&window));
     graphics.clear();
     let terrain = Terrain::new(&graphics.device);
-    terrain.render(&graphics);
+    let output = graphics.surface.get_current_texture().unwrap();
+    let view = output.texture.create_view(&TextureViewDescriptor::default());
+    let mut encoder = graphics.encoder(Some("TerrainRender Encoder"));
+    terrain.render(&graphics.device, &mut encoder, &view, graphics.config.format);
+    graphics.queue.submit(once(encoder.finish()));
+    output.present();
 
     let camera = Camera::new();
     let proj = uv::projection::orthographic_wgpu_dx(0., 800., 0., 600., 0.1, 100.);
