@@ -98,7 +98,7 @@ static bool _hasKHRSwapchainExt(VkExtensionPropertiesArr exts)
 static bool _hasGraphicsQueueFamily(VkQueueFamilyPropertiesArr qfs)
 {
     for (int i = 0; i < arrlen(qfs); ++i) {
-        if (qfs[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
+        if (qfs[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             return true;
         }
     }
@@ -191,7 +191,7 @@ static int
 _getGraphicsQueueFamilyIndex(VkPhysicalDevice phys, VkDevice device, VkQueueFamilyPropertiesArr props)
 {
     for (int i = 0; i < arrlen(props); ++i) {
-        if (props[i].queueFlags | VK_QUEUE_GRAPHICS_BIT) {
+        if (props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             ecs_trace("Found graphics queue family index [%d]", i);
             return i;
         }

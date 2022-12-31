@@ -5,10 +5,10 @@ project('russetair-battleship', 'c',
 cc = meson.get_compiler('c')
 
 add_global_arguments([
-  '-Werror=discarded-qualifiers', 
   '-Werror=incompatible-pointer-types',
   '-Werror=uninitialized',
-  '-Werror=return-type'
+  '-Werror=return-type',
+  '-Wno-missing-field-initializers'
   ], language: 'c')
 
 cmake = import('cmake')
@@ -30,16 +30,15 @@ sqlite3_dep = dependency('sqlite3')
 m_dep = cc.find_library('m', required : false)
 
 subdir('src')
-
+flecs_subproject = subproject('flecs')
+flecs_dep = flecs_subproject.get_variable('flecs_dep')
 thirdparty_src = files(
-  'thirdparty/flecs/flecs.c',
   'thirdparty/stb/stb.c'
 )
 
 src_inc = include_directories('src')
 thirdparty_inc = include_directories([
   'thirdparty/stb',
-  'thirdparty/flecs',
 ])
 
 exe = executable('c_battleship', [
@@ -49,6 +48,7 @@ exe = executable('c_battleship', [
   ],
   dependencies : [
     gfx_deps,
+    flecs_dep,
     assimp_dep,
     sqlite3_dep,
     m_dep,
