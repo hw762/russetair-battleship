@@ -70,7 +70,7 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     const ImageView* view = swapchainCurrentView(&swapchain);
     queueSubmit(&instance.renderDevice, &cmdBuf, view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, view->renderCompleteSemaphore, view->fence);
 
-    swapchainPresent(&swapchain, instance.renderDevice.queue.handle);
+    swapchainPresent(&swapchain, instance.renderDevice.presentQueue.handle);
 
     return e;
 }

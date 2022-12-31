@@ -88,7 +88,7 @@ void queueSubmit(const RenderDevice* device, const CommandBuffer* cmdBuf, VkSema
           };
     vkWaitForFences(device->handle, 1, &fence, true, LONG_MAX);
     vkResetFences(device->handle, 1, &fence);
-    vkCheck(vkQueueSubmit(device->queue.handle, 1, &submit, fence))
+    vkCheck(vkQueueSubmit(device->presentQueue.handle, 1, &submit, fence))
     {
         ecs_abort(1, "Failed to submit queue");
     }

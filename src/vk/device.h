@@ -16,7 +16,7 @@ typedef struct CommandBuffer CommandBuffer;
 typedef struct RenderDevice {
     VkDevice handle;
     const PhysicalDevice* phys;
-    Queue queue;
+    Queue presentQueue;
 } RenderDevice;
 
 RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices);
