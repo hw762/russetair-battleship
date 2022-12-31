@@ -10,7 +10,7 @@
 
 ECS_PREFAB_DECLARE(VulkanSystem);
 
-ECS_DECLARE(PhysicalDevice);
+ECS_PREFAB_DECLARE(PhysicalDevice);
 ECS_COMPONENT_DECLARE(VkPhysicalDevice);
 ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
 ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
@@ -19,13 +19,13 @@ ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
 ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
 ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
 
-ECS_DECLARE(RenderDevice);
+ECS_PREFAB_DECLARE(RenderDevice);
 ECS_COMPONENT_DECLARE(VkSurfaceKHR);
 ECS_COMPONENT_DECLARE(VkDevice);
 ECS_COMPONENT_DECLARE(VkQueue);
 ECS_DECLARE(QueueIsGraphics);
 
-ECS_DECLARE(GraphicsPipeline);
+ECS_PREFAB_DECLARE(GraphicsPipeline);
 ECS_COMPONENT_DECLARE(VkImageViewArr);
 ECS_COMPONENT_DECLARE(VkFramebuffer);
 ECS_COMPONENT_DECLARE(VkSwapchainKHR);
@@ -39,34 +39,14 @@ ECS_COMPONENT_DECLARE(VkCommandPool);
 
 void registerVulkan(ecs_world_t* ecs)
 {
-    ECS_TAG_DEFINE(ecs, VulkanSystem);
+    // ECS_TAG_DEFINE(ecs, VulkanSystem);
     ECS_PREFAB_DEFINE(ecs, VulkanSystem); // Slots added at the end
+
     registerInstance(ecs);
+    registerDevice(ecs);
 
-    ECS_TAG_DEFINE(ecs, PhysicalDevice);
-    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
-    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceProperties);
-    ECS_COMPONENT_DEFINE(ecs, VkExtensionPropertiesArr);
-    ECS_COMPONENT_DEFINE(ecs, VkQueueFamilyPropertiesArr);
-    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceFeatures);
-    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceMemoryProperties);
-    ECS_PREFAB_DEFINE(ecs, PhysicalDevice,
-        VkPhysicalDevice, VkPhysicalDeviceProperties, VkExtensionPropertiesArr,
-        VkQueueFamilyPropertiesArr, VkPhysicalDeviceFeatures,
-        VkPhysicalDeviceMemoryProperties);
-
-    ECS_TAG_DEFINE(ecs, RenderDevice);
-    ECS_COMPONENT_DEFINE(ecs, VkSurfaceKHR);
-    ECS_COMPONENT_DEFINE(ecs, SelectedPhysicalDevice);
-    ECS_COMPONENT_DEFINE(ecs, VkDevice);
-    ECS_COMPONENT_DEFINE(ecs, VkQueue);
-    ECS_TAG_DEFINE(ecs, QueueIsGraphics);
-    ECS_PREFAB_DEFINE(ecs, RenderDevice,
-        SelectedPhysicalDevice, VkDevice, VkQueue);
-
-    ECS_TAG_DEFINE(ecs, GraphicsPipeline);
-    ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
     ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
+    ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
     ECS_COMPONENT_DEFINE(ecs, VkFramebuffer);
     ECS_COMPONENT_DEFINE(ecs, VkPipeline);
     ECS_PREFAB_DEFINE(ecs, GraphicsPipeline,
@@ -77,7 +57,8 @@ void registerVulkan(ecs_world_t* ecs)
     ECS_COMPONENT_DEFINE(ecs, VkShaderModule);
 
     ECS_COMPONENT_DEFINE(ecs, VkCommandPool);
-    // TODO: define slots
+
+    // Slots
     // Vulkan system contains exactly one instance
     ecs_add_pair(ecs, VulkanInstance, EcsSlotOf, VulkanSystem);
     ecs_add_pair(ecs, VulkanInstance, EcsChildOf, VulkanSystem);
@@ -113,3 +94,4 @@ void setupVulkanSurface(ecs_world_t* ecs, ecs_entity_t eSystem, VkSurfaceKHR sur
     ecs_trace("VkSurfaceKHR = %#p", surface);
     ecs_set_ptr(ecs, eSystem, VkSurfaceKHR, &surface);
 }
+

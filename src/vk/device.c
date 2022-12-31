@@ -2,6 +2,28 @@
 #include "vk.h"
 
 #include <stb_ds.h>
+#include <flecs.h>
+
+void registerDevice(ecs_world_t* ecs) {
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceProperties);
+    ECS_COMPONENT_DEFINE(ecs, VkExtensionPropertiesArr);
+    ECS_COMPONENT_DEFINE(ecs, VkQueueFamilyPropertiesArr);
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceFeatures);
+    ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceMemoryProperties);
+    ECS_PREFAB_DEFINE(ecs, PhysicalDevice,
+        VkPhysicalDevice, VkPhysicalDeviceProperties, VkExtensionPropertiesArr,
+        VkQueueFamilyPropertiesArr, VkPhysicalDeviceFeatures,
+        VkPhysicalDeviceMemoryProperties);
+
+    ECS_COMPONENT_DEFINE(ecs, VkSurfaceKHR);
+    ECS_COMPONENT_DEFINE(ecs, SelectedPhysicalDevice);
+    ECS_COMPONENT_DEFINE(ecs, VkDevice);
+    ECS_COMPONENT_DEFINE(ecs, VkQueue);
+    ECS_TAG_DEFINE(ecs, QueueIsGraphics);
+    ECS_PREFAB_DEFINE(ecs, RenderDevice,
+        SelectedPhysicalDevice, VkDevice, VkQueue);
+}
 
 /// @brief Name of the `VkPhysicalDeviceType` enum.
 static const char* PHYSICAL_DEVICE_TYPES[] = {
