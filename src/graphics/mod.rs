@@ -1,3 +1,5 @@
+use std::iter::once;
+
 use wgpu::*;
 use winit::window::Window;
 pub struct GraphicsSystem {
@@ -41,6 +43,7 @@ impl GraphicsSystem {
             present_mode: PresentMode::Fifo,
             alpha_mode: CompositeAlphaMode::Auto,
         };
+        surface.configure(&device, &config);
         Self {
             instance,
             surface,
@@ -49,5 +52,39 @@ impl GraphicsSystem {
             config,
             size,
         }
+    }
+    pub fn clear(&mut self) {
+        let output = self
+            .surface
+            .get_current_texture()
+            .expect("Failed to get surface texture");
+        let view = output
+            .texture
+            .create_view(&TextureViewDescriptor::default());
+        let mut encoder = self
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("ClearEncoder"),
+            });
+        encoder.begin_render_pass(&RenderPassDescriptor {
+            label: Some("ClearRenderPass"),
+            color_attachments: &[Some(RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: Operations {
+                    load: LoadOp::Clear(Color {
+                        r: 0.1,
+                        g: 0.2,
+                        b: 0.3,
+                        a: 1.0,
+                    }),
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: None,
+        });
+
+        self.queue.submit(once(encoder.finish()));
+        output.present();
     }
 }

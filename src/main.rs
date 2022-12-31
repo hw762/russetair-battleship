@@ -9,7 +9,8 @@ fn main() {
     let window = winit::window::Window::new(&event_loop).unwrap();
     window.set_resizable(false);
 
-    let graphics = pollster::block_on(GraphicsSystem::new(&window));
+    let mut graphics = pollster::block_on(GraphicsSystem::new(&window));
+    graphics.clear();
 
     event_loop.run(move |event, _, control_flow| {
         match event {
