@@ -4,8 +4,10 @@ use winit::{event_loop::{EventLoop, ControlFlow}, event::{WindowEvent, Event, Ke
 mod graphics;
 
 fn main() {
+    // HACK: The entire main function is a hack.
     let event_loop = EventLoop::new();
     let window = winit::window::Window::new(&event_loop).unwrap();
+    window.set_resizable(false);
 
     let graphics = pollster::block_on(GraphicsSystem::new(&window));
 
