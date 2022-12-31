@@ -4,12 +4,12 @@ use wgpu::*;
 use winit::window::Window;
 
 pub struct GraphicsSystem {
-    instance: Instance,
-    surface: Surface,
-    device: Device,
-    queue: Queue,
-    config: SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
+    pub instance: Instance,
+    pub surface: Surface,
+    pub device: Device,
+    pub queue: Queue,
+    pub config: SurfaceConfiguration,
+    pub size: winit::dpi::PhysicalSize<u32>,
 }
 
 impl GraphicsSystem {
@@ -53,9 +53,6 @@ impl GraphicsSystem {
             config,
             size,
         }
-    }
-    pub fn device(&self) -> &Device {
-        &self.device
     }
     pub fn encoder(&self, label: Option<&str>) -> CommandEncoder {
         self.device.create_command_encoder(&CommandEncoderDescriptor {
