@@ -5,10 +5,10 @@
 
 #define vkCheck(stmt) if ((stmt) != VK_SUCCESS)
 
-extern ECS_DECLARE(VulkanSystem);
+extern ECS_PREFAB_DECLARE(VulkanSystem);
 
 // Instance
-extern ECS_DECLARE(VulkanInstance);
+extern ECS_PREFAB_DECLARE(VulkanInstance);
 extern ECS_COMPONENT_DECLARE(VkInstance);
 extern ECS_COMPONENT_DECLARE(VkDebugUtilsMessengerEXT);
 
@@ -17,7 +17,7 @@ typedef ecs_entity_t SelectedPhysicalDevice;
 typedef VkExtensionProperties* VkExtensionPropertiesArr;
 typedef VkQueueFamilyProperties* VkQueueFamilyPropertiesArr;
 
-extern ECS_DECLARE(PhysicalDevice);
+extern ECS_PREFAB_DECLARE(PhysicalDevice);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDevice);
 extern ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
@@ -27,24 +27,28 @@ extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
 extern ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
 
 // Logical device
-extern ECS_DECLARE(RenderDevice);
+extern ECS_PREFAB_DECLARE(RenderDevice);
 extern ECS_COMPONENT_DECLARE(VkSurfaceKHR);
 extern ECS_COMPONENT_DECLARE(VkDevice);
 extern ECS_COMPONENT_DECLARE(VkQueue);
-extern ECS_DECLARE(QueueIsGraphics);
+extern ECS_TAG_DECLARE(QueueIsGraphics);
 
-// Pipeline
-extern ECS_DECLARE(GraphicsPipeline);
+// Swapchain
 typedef VkImageView* VkImageViewArr;
+extern ECS_PREFAB_DECLARE(Swapchain);
 extern ECS_COMPONENT_DECLARE(VkImageViewArr);
 extern ECS_COMPONENT_DECLARE(VkSwapchainKHR);
 extern ECS_COMPONENT_DECLARE(VkFramebuffer);
-extern ECS_COMPONENT_DECLARE(VkPipeline);
 
+// Pipeline
+extern ECS_PREFAB_DECLARE(GraphicsPipeline);
+extern ECS_COMPONENT_DECLARE(VkPipeline);
 extern ECS_COMPONENT_DECLARE(VkRenderPass);
 extern ECS_COMPONENT_DECLARE(VkDescriptorSetLayout);
-extern ECS_COMPONENT_DECLARE(VkShaderModule);
-
+typedef VkShaderModule VertexShaderModule;
+typedef VkShaderModule FragmentShaderModule;
+extern ECS_COMPONENT_DECLARE(VertexShaderModule);
+extern ECS_COMPONENT_DECLARE(FragmentShaderModule);
 extern ECS_COMPONENT_DECLARE(VkCommandPool);
 
 void registerVulkan(ecs_world_t* ecs);

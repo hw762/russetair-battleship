@@ -6,36 +6,10 @@
 
 #include "device.h"
 #include "instance.h"
+#include "pipeline.h"
 #include "swapchain.h"
 
 ECS_PREFAB_DECLARE(VulkanSystem);
-
-ECS_PREFAB_DECLARE(PhysicalDevice);
-ECS_COMPONENT_DECLARE(VkPhysicalDevice);
-ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
-ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
-ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
-ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
-ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
-ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
-
-ECS_PREFAB_DECLARE(RenderDevice);
-ECS_COMPONENT_DECLARE(VkSurfaceKHR);
-ECS_COMPONENT_DECLARE(VkDevice);
-ECS_COMPONENT_DECLARE(VkQueue);
-ECS_DECLARE(QueueIsGraphics);
-
-ECS_PREFAB_DECLARE(GraphicsPipeline);
-ECS_COMPONENT_DECLARE(VkImageViewArr);
-ECS_COMPONENT_DECLARE(VkFramebuffer);
-ECS_COMPONENT_DECLARE(VkSwapchainKHR);
-ECS_COMPONENT_DECLARE(VkPipeline);
-
-ECS_COMPONENT_DECLARE(VkRenderPass);
-ECS_COMPONENT_DECLARE(VkDescriptorSetLayout);
-ECS_COMPONENT_DECLARE(VkShaderModule);
-
-ECS_COMPONENT_DECLARE(VkCommandPool);
 
 void registerVulkan(ecs_world_t* ecs)
 {
@@ -44,19 +18,8 @@ void registerVulkan(ecs_world_t* ecs)
 
     registerInstance(ecs);
     registerDevice(ecs);
-
-    ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
-    ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
-    ECS_COMPONENT_DEFINE(ecs, VkFramebuffer);
-    ECS_COMPONENT_DEFINE(ecs, VkPipeline);
-    ECS_PREFAB_DEFINE(ecs, GraphicsPipeline,
-        VkImageViewArr, VkSwapchainKHR, VkFramebuffer, VkPipeline);
-
-    ECS_COMPONENT_DEFINE(ecs, VkRenderPass);
-    ECS_COMPONENT_DEFINE(ecs, VkDescriptorSetLayout);
-    ECS_COMPONENT_DEFINE(ecs, VkShaderModule);
-
-    ECS_COMPONENT_DEFINE(ecs, VkCommandPool);
+    registerSwapchain(ecs);
+    registerPipeline(ecs);
 
     // Slots
     // Vulkan system contains exactly one instance

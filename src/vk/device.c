@@ -4,6 +4,21 @@
 #include <stb_ds.h>
 #include <flecs.h>
 
+ECS_PREFAB_DECLARE(PhysicalDevice);
+ECS_COMPONENT_DECLARE(VkPhysicalDevice);
+ECS_COMPONENT_DECLARE(SelectedPhysicalDevice);
+ECS_COMPONENT_DECLARE(VkPhysicalDeviceProperties);
+ECS_COMPONENT_DECLARE(VkExtensionPropertiesArr);
+ECS_COMPONENT_DECLARE(VkQueueFamilyPropertiesArr);
+ECS_COMPONENT_DECLARE(VkPhysicalDeviceFeatures);
+ECS_COMPONENT_DECLARE(VkPhysicalDeviceMemoryProperties);
+
+ECS_PREFAB_DECLARE(RenderDevice);
+ECS_COMPONENT_DECLARE(VkSurfaceKHR);
+ECS_COMPONENT_DECLARE(VkDevice);
+ECS_COMPONENT_DECLARE(VkQueue);
+ECS_TAG_DECLARE(QueueIsGraphics);
+
 void registerDevice(ecs_world_t* ecs) {
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDevice);
     ECS_COMPONENT_DEFINE(ecs, VkPhysicalDeviceProperties);

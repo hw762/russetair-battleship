@@ -4,6 +4,19 @@
 #include <stb_ds.h>
 #include <utils/math.h>
 
+ECS_PREFAB_DECLARE(Swapchain);
+ECS_COMPONENT_DECLARE(VkImageViewArr);
+ECS_COMPONENT_DECLARE(VkFramebuffer);
+ECS_COMPONENT_DECLARE(VkSwapchainKHR);
+
+void registerSwapchain(ecs_world_t* ecs)
+{
+    ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
+    ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
+    ECS_COMPONENT_DEFINE(ecs, VkFramebuffer);
+    ECS_PREFAB_DEFINE(ecs, Swapchain, VkSwapchainKHR, VkImageViewArr, VkFramebuffer);
+}
+
 typedef struct {
     int imageFormat;
     int colorSpace;
