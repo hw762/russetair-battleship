@@ -1,10 +1,17 @@
 #pragma once
 
-#include <flecs.h>
+#include <vulkan/vulkan.h>
 
-struct SurfaceFormat {
+#include "device.h"
+
+typedef struct SurfaceFormat {
     int imageFormat;
     int colorSpace;
-};
+} SurfaceFormat;
 
-void registerSwapchain(ecs_world_t* ecs);
+typedef struct Swapchain {
+    VkSwapchainKHR handle;
+    const RenderDevice* device;
+    VkSurfaceKHR surface;
+    VkImageView* arrViews;
+} Swapchain;

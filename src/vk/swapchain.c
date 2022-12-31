@@ -1,23 +1,10 @@
 #include "swapchain.h"
+#include "device.h"
+#include "physical_device.h"
 #include "vk.h"
 
 #include <stb_ds.h>
 #include <utils/math.h>
-
-ECS_PREFAB_DECLARE(Swapchain);
-ECS_COMPONENT_DECLARE(VkImageViewArr);
-ECS_COMPONENT_DECLARE(VkFramebuffer);
-ECS_COMPONENT_DECLARE(VkSwapchainKHR);
-ECS_COMPONENT_DECLARE(SurfaceFormat);
-
-void registerSwapchain(ecs_world_t* ecs)
-{
-    ECS_COMPONENT_DEFINE(ecs, VkSwapchainKHR);
-    ECS_COMPONENT_DEFINE(ecs, VkImageViewArr);
-    ECS_COMPONENT_DEFINE(ecs, VkFramebuffer);
-    ECS_COMPONENT_DEFINE(ecs, SurfaceFormat);
-    ECS_PREFAB_DEFINE(ecs, Swapchain, VkSwapchainKHR, VkImageViewArr, VkFramebuffer, SurfaceFormat);
-}
 
 static VkSurfaceCapabilitiesKHR
 _getSurfaceCapabilitiesKHR(VkPhysicalDevice phys, VkSurfaceKHR surface)
@@ -133,13 +120,12 @@ _VkImageView(VkDevice device, VkImage image, ImageViewData data)
     return view;
 }
 
-static void
-_setupImageViews(ecs_world_t* ecs, ecs_entity_t eSwapchain,
-    VkDevice device, VkSwapchainKHR swapchain, int format)
+static VkImageView*
+_newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
 {
     uint32_t count;
     VkImage* images = NULL;
-    VkImageViewArr views = NULL;
+    VkImageView* views = NULL;
 
     vkCheck(vkGetSwapchainImagesKHR(device, swapchain, &count, NULL))
     {
@@ -158,25 +144,22 @@ _setupImageViews(ecs_world_t* ecs, ecs_entity_t eSwapchain,
         views[i] = _VkImageView(device, images[i], data);
         ecs_trace("Created VkImageView = %#p", images[i]);
     }
-    ecs_set_ptr(ecs, eSwapchain, VkImageViewArr, views);
+    return views;
 }
 
-void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
+Swapchain
+newSwapchain(const RenderDevice* renderDevice, VkSurfaceKHR surface,
     int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight)
 {
-    assert(ecs_has_pair(ecs, eSystem, EcsIsA, VulkanSystem));
-    ecs_entity_t e = ecs_get_target(ecs, eSystem, Swapchain, 0);
-
-    VkSurfaceKHR surface = *ecs_get(ecs, eSystem, VkSurfaceKHR);
-    ecs_entity_t eSelected = *ecs_get(ecs, eSystem, SelectedPhysicalDevice);
-    VkPhysicalDevice physDev = *ecs_get(ecs, eSelected, VkPhysicalDevice);
-    VkDevice device = *ecs_get(ecs, eSystem, VkDevice);
+    const PhysicalDevice* physDev = renderDevice->phys;
+    VkPhysicalDevice vkPhysDev = physDev->handle;
+    VkDevice device = renderDevice->handle;
     ecs_trace("Creating Swapchain on device [%#p]", device);
     ecs_log_push();
 
-    VkSurfaceCapabilitiesKHR capabilities = _getSurfaceCapabilitiesKHR(physDev, surface);
+    VkSurfaceCapabilitiesKHR capabilities = _getSurfaceCapabilitiesKHR(vkPhysDev, surface);
     int numImages = _calcNumImages(capabilities, requestedImages);
-    SurfaceFormat format = _calcSurfaceFormat(physDev, surface);
+    SurfaceFormat format = _calcSurfaceFormat(vkPhysDev, surface);
     VkExtent2D extent = _calcSwapchainExtent(capabilities, defaultWidth, defaultHeight);
 
     VkSwapchainCreateInfoKHR ci = {
@@ -204,28 +187,14 @@ void setupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem,
         ecs_abort(1, "Failed to create swapchain");
     }
     ecs_trace("VkSwapchainKHR = %#p", swapchain);
-    ecs_set_ptr(ecs, e, VkSwapchainKHR, &swapchain);
-    ecs_set_ptr(ecs, e, SurfaceFormat, &format);
 
-    _setupImageViews(ecs, e, device, swapchain, format.imageFormat);
+    VkImageView* views = _newImageViews(device, swapchain, format.imageFormat);
 
     ecs_log_pop();
-}
-
-void cleanupSwapchain(ecs_world_t* ecs, ecs_entity_t eSystem)
-{
-    assert(ecs_has_pair(ecs, eSystem, EcsIsA, VulkanSystem));
-    ecs_trace("Destroying Vulkan swapchain");
-    VkDevice device = *ecs_get(ecs, eSystem, VkDevice);
-    VkImageViewArr views = *ecs_get(ecs, eSystem, VkImageViewArr);
-    VkSwapchainKHR swapchain = *ecs_get(ecs, eSystem, VkSwapchainKHR);
-    for (int i = 0; i < arrlen(views); ++i) {
-        vkDestroyImageView(device, views[i], NULL);
-    }
-    arrfree(views);
-    assert(views == NULL);
-    ecs_set_ptr(ecs, eSystem, VkImageViewArr, &views);
-    vkDestroySwapchainKHR(device, swapchain, NULL);
-    swapchain = NULL;
-    ecs_set_ptr(ecs, eSystem, VkSwapchainKHR, &swapchain);
+    return (Swapchain) {
+        .handle = swapchain,
+        .device = renderDevice,
+        .surface = surface,
+        .arrViews = views,
+    };
 }

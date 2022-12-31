@@ -1,6 +1,14 @@
 #pragma once
 
-#include <flecs.h>
 #include <vulkan/vulkan.h>
 
-void registerDevice(ecs_world_t* ecs);
+struct PhysicalDevice;
+typedef struct PhysicalDevice PhysicalDevice;
+
+typedef struct RenderDevice {
+    VkDevice handle;
+    const PhysicalDevice* phys;
+    VkQueue queue;
+} RenderDevice;
+
+RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices);
