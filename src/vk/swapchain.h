@@ -14,4 +14,5 @@ typedef struct Swapchain {
     const RenderDevice* device;
     VkSurfaceKHR surface;
     VkImageView* arrViews;
+    SurfaceFormat format;
 } Swapchain;

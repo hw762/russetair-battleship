@@ -30,9 +30,12 @@ If entity is supposed to be "system-level", such as graphics system, vulkan syst
 - [ ] Select best device instead of first device
 - [ ] Proper cleanup
 
-Workflow:
+Workflow (for each material):
 
-For each material, record corresponding command buffer, submit to queue
+. Acquire image from swapchain
+. Recording command buffer
+.. Record render pass
+. Submit to queue 
 
 === 2D Debugger
 

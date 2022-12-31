@@ -7,6 +7,7 @@
 
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 };
 
 static VkQueue
@@ -46,13 +47,18 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
                   .queueCount = qc,
               };
     }
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+        .dynamicRendering = VK_TRUE,
+    };
     VkDeviceCreateInfo deviceCI = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .ppEnabledExtensionNames = _requiredExtensions,
-        .enabledExtensionCount = 1,
+        .enabledExtensionCount = 2,
         .pEnabledFeatures = &features,
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
+        .pNext = &dynamic,
     };
     VkDevice device;
     vkCheck(vkCreateDevice(vkPhysicalDevice, &deviceCI, NULL, &device))

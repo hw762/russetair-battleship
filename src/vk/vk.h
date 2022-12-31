@@ -6,7 +6,6 @@
 #include "device.h"
 #include "instance.h"
 #include "physical_device.h"
-#include "pipeline.h"
 #include "swapchain.h"
 
 #define vkCheck(stmt) if ((stmt) != VK_SUCCESS)

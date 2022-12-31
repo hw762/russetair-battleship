@@ -196,5 +196,6 @@ newSwapchain(const RenderDevice* renderDevice, VkSurfaceKHR surface,
         .device = renderDevice,
         .surface = surface,
         .arrViews = views,
+        .format = format,
     };
 }
