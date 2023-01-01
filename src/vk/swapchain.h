@@ -12,6 +12,7 @@ typedef struct SurfaceFormat {
 
 typedef struct ImageView {
     VkImageView handle;
+    VkImage image;
     VkFence fence;
     VkSemaphore acquisitionSemaphore;
     VkSemaphore renderCompleteSemaphore;

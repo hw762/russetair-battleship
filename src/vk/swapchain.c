@@ -166,11 +166,12 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
         views[i]
             = (ImageView) {
                   .handle = imgView,
+                  .image = images[i],
                   .fence = fence,
                   .acquisitionSemaphore = imgAcquisitionSemaphore,
                   .renderCompleteSemaphore = renderCompleteSemaphore
               };
-        ecs_trace("Created VkImageView = %#p, VkFence = %#p", imgView, fence);
+        ecs_trace("Created VkImageView = %#p on VkSwapchainKHR = %#p", imgView, swapchain);
     }
     return views;
 }
@@ -251,7 +252,6 @@ bool swapchainAcquire(Swapchain* swapchain)
     default:
         ecs_abort(1, "Failed to acquire image")
     }
-
     return resize;
 }
 
@@ -260,15 +260,27 @@ bool swapchainPresent(Swapchain* swapchain, VkQueue queue)
     bool resize = false;
 
     const ImageView* view = swapchainCurrentView(swapchain);
-
-    VkPresentInfoKHR presentInfo = {
-        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .pWaitSemaphores = &view->renderCompleteSemaphore,
-        .waitSemaphoreCount = 1,
-        .swapchainCount = 1,
-        .pSwapchains = &swapchain->handle,
-        .pImageIndices = &swapchain->currentFrame,
-    };
+    ecs_trace("Presenting to image [%d]", swapchain->currentFrame);
+    VkPresentInfoKHR presentInfo
+        = {
+              .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+              .pWaitSemaphores = &view->renderCompleteSemaphore,
+              .waitSemaphoreCount = 1,
+              .swapchainCount = 1,
+              .pSwapchains = &swapchain->handle,
+              .pImageIndices = &swapchain->currentFrame,
+          };
     swapchain->currentFrame = (swapchain->currentFrame + 1) % arrlen(swapchain->arrViews);
+    switch (vkQueuePresentKHR(queue, &presentInfo)) {
+    case VK_ERROR_OUT_OF_DATE_KHR:
+        resize = true;
+        break;
+    case VK_SUBOPTIMAL_KHR:
+        break;
+    case VK_SUCCESS:
+        break;
+    default:
+        ecs_abort(1, "Failed to present KHR");
+    }
     return resize;
 }

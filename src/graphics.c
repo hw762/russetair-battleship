@@ -59,21 +59,24 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     Swapchain swapchain
         = newSwapchain(&instance.renderDevice, surface, 3, true, w, h);
     CommandPool pool = newCommandPool(&instance.renderDevice, &presentQueue);
-    CommandBuffer cmdBuf = newCommandBuffer(&pool);
 
     // Pre-record clears
     for (int i = 0; i < arrlen(swapchain.arrViews); ++i) {
+        CommandBuffer cmdBuf = newCommandBuffer(&pool);
         commandBufferRecordClear(&cmdBuf, &swapchain.arrViews[i], w, h);
-    }
-    // Render to screen
-    swapchainAcquire(&swapchain);
-    // TODO: queue submit
-    const ImageView* view = swapchainCurrentView(&swapchain);
-    queueSubmit(&presentQueue, &cmdBuf,
-        view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        view->renderCompleteSemaphore, view->fence);
+        // Render to screen
+        swapchainAcquire(&swapchain);
+        // TODO: queue submit
+        const ImageView* view = swapchainCurrentView(&swapchain);
+        vkWaitForFences(instance.renderDevice.handle, 1, &view->fence, true, LONG_MAX);
+        vkResetFences(instance.renderDevice.handle, 1, &view->fence);
+        queueSubmit(&presentQueue, &cmdBuf,
+            view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            view->renderCompleteSemaphore, view->fence);
 
-    swapchainPresent(&swapchain, presentQueue.handle);
+        swapchainPresent(&swapchain, presentQueue.handle);
+        // vkFreeCommandBuffers(instance.renderDevice.handle, pool.handle, 1, &cmdBuf.handle);
+    }
 
     return e;
 }

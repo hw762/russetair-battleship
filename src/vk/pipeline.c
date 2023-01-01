@@ -108,13 +108,40 @@ void commandBufferRecordClear(const CommandBuffer* commandBuffer,
         .colorAttachmentCount = 1,
         .pColorAttachments = &colorAttachmentInfo,
     };
+    VkImageMemoryBarrier imageMemoryBarrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .image = view->image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        }
+    };
 
     vkCheck(vkBeginCommandBuffer(commandBuffer->handle, &beginInfo))
     {
         ecs_abort(1, "Failed to begin command buffer");
     }
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageMemoryBarrier.srcAccessMask = 0;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    vkCmdPipelineBarrier(commandBuffer->handle,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0, 0, NULL, 0, NULL, 1, &imageMemoryBarrier);
     vkCmdBeginRendering(commandBuffer->handle, &renderingInfo);
     vkCmdEndRendering(commandBuffer->handle);
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    imageMemoryBarrier.dstAccessMask = 0;
+    vkCmdPipelineBarrier(commandBuffer->handle,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0, 0, NULL, 0, NULL, 1, &imageMemoryBarrier);
     vkCheck(vkEndCommandBuffer(commandBuffer->handle))
     {
         ecs_abort(1, "Failed to end command buffer");

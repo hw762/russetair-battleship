@@ -88,8 +88,6 @@ void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
               .pSignalSemaphores = &signalSemaphore,
               .pWaitDstStageMask = &dstStageMask,
           };
-    vkWaitForFences(queue->device->handle, 1, &fence, true, LONG_MAX);
-    vkResetFences(queue->device->handle, 1, &fence);
     vkCheck(vkQueueSubmit(queue->handle, 1, &submit, fence))
     {
         ecs_abort(1, "Failed to submit queue");
