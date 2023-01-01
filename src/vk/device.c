@@ -71,7 +71,9 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     return device;
 }
 
-void queueSubmit(const RenderDevice* device, const CommandBuffer* cmdBuf, VkSemaphore waitSemaphore, int dstStageMask, VkSemaphore signalSemaphore, VkFence fence)
+void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
+    VkSemaphore waitSemaphore, int dstStageMask,
+    VkSemaphore signalSemaphore, VkFence fence)
 {
     ecs_trace("Submitting to device queue...");
     ecs_log_push();
@@ -86,9 +88,9 @@ void queueSubmit(const RenderDevice* device, const CommandBuffer* cmdBuf, VkSema
               .pSignalSemaphores = &signalSemaphore,
               .pWaitDstStageMask = dstStageMask,
           };
-    vkWaitForFences(device->handle, 1, &fence, true, LONG_MAX);
-    vkResetFences(device->handle, 1, &fence);
-    vkCheck(vkQueueSubmit(device->presentQueue.handle, 1, &submit, fence))
+    vkWaitForFences(queue->device->handle, 1, &fence, true, LONG_MAX);
+    vkResetFences(queue->device->handle, 1, &fence);
+    vkCheck(vkQueueSubmit(queue->handle, 1, &submit, fence))
     {
         ecs_abort(1, "Failed to submit queue");
     }
@@ -96,7 +98,7 @@ void queueSubmit(const RenderDevice* device, const CommandBuffer* cmdBuf, VkSema
     ecs_log_pop();
 }
 
-RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices)
+Device newRenderDevice(PhysicalDevice* arrPhysicalDevices)
 {
     ecs_trace("Creating RenderDevice");
     ecs_log_push();
@@ -104,16 +106,39 @@ RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices)
     PhysicalDevice* physDev = selectPhysicalDevice(arrPhysicalDevices);
     // Create logical device
     VkDevice device = _newLogicalDevice(physDev);
-    // Create graphics queue
-    int graphicsQueueFamilyIndex = getGraphicsQueueFamilyIndex(physDev);
-    VkQueue graphicsQueue = _newDeviceQueue(device, graphicsQueueFamilyIndex, 0);
     ecs_log_pop();
-    return (RenderDevice) {
+    return (Device) {
         .handle = device,
         .phys = physDev,
-        .queue = {
-            .handle = graphicsQueue,
-            .queueFamilyIndex = graphicsQueueFamilyIndex,
-        },
+    };
+}
+
+Queue deviceGetGraphicsQueue(const Device* device)
+{
+    ecs_trace("Creating graphics queue");
+    ecs_log_push();
+    int index = getGraphicsQueueFamilyIndex(device->phys);
+    VkQueue q = _newDeviceQueue(device->handle, index, 0);
+    ecs_trace("Done creating graphics queue VkQueue = %#p on VkDevice = %#p", q, device->handle);
+    ecs_log_pop();
+    return (Queue) {
+        .handle = q,
+        .device = device,
+        .queueFamilyIndex = index,
+    };
+}
+
+Queue deviceGetPresentQueue(const Device* device, VkSurfaceKHR surface)
+{
+    ecs_trace("Creating present queue");
+    ecs_log_push();
+    int index = getPresentQueueFamilyIndex(device->phys, surface);
+    VkQueue q = _newDeviceQueue(device->handle, index, 0);
+    ecs_trace("Done creating present queue VkQueue = %#p on VkDevice = %#p", q, device->handle);
+    ecs_log_pop();
+    return (Queue) {
+        .handle = q,
+        .device = device,
+        .queueFamilyIndex = index,
     };
 }

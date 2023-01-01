@@ -31,14 +31,14 @@
 // }
 
 CommandPool
-newCommandPool(const RenderDevice* device)
+newCommandPool(const Device* device, const Queue* queue)
 {
     ecs_trace("Creating command pool");
     ecs_log_push();
     VkCommandPoolCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = device->presentQueue.queueFamilyIndex
+        .queueFamilyIndex = queue->queueFamilyIndex
     };
     VkCommandPool commandPool;
     vkCheck(vkCreateCommandPool(device->handle, &ci, NULL, &commandPool))

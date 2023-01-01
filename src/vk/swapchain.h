@@ -19,7 +19,7 @@ typedef struct ImageView {
 
 typedef struct Swapchain {
     VkSwapchainKHR handle;
-    const RenderDevice* device;
+    const Device* device;
     VkSurfaceKHR surface;
     ImageView* arrViews;
     SurfaceFormat format;
@@ -28,7 +28,7 @@ typedef struct Swapchain {
 } Swapchain;
 
 Swapchain
-newSwapchain(const RenderDevice* renderDevice, VkSurfaceKHR surface,
+newSwapchain(const Device* renderDevice, VkSurfaceKHR surface,
     int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight);
 
 bool swapchainAcquire(Swapchain* swapchain);

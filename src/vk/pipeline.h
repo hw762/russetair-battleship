@@ -2,8 +2,11 @@
 
 #include <vulkan/vulkan.h>
 
-struct RenderDevice;
-typedef struct RenderDevice RenderDevice;
+struct Device;
+typedef struct Device Device;
+
+struct Queue;
+typedef struct Queue Queue;
 
 struct ImageView;
 typedef struct ImageView ImageView;
@@ -17,10 +20,10 @@ typedef struct Pipeline {
 
 typedef struct CommandPool {
     VkCommandPool handle;
-    const RenderDevice* device;
+    const Device* device;
 } CommandPool;
 
-CommandPool newCommandPool(const RenderDevice* device);
+CommandPool newCommandPool(const Device* device, const Queue* queue);
 
 typedef struct CommandBuffer {
     VkCommandBuffer handle;

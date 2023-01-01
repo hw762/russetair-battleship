@@ -26,7 +26,7 @@ VulkanInstance newVulkanInstance(const char** exts, uint32_t n_exts)
     // Setup messenger
     VkDebugUtilsMessengerEXT messenger = newVkDebugUtilsMessengerEXT(instance);
     PhysicalDevice* phys = getPhysicalDevices(instance);
-    RenderDevice device = newRenderDevice(phys);
+    Device device = newRenderDevice(phys);
     ecs_log_pop();
     return (VulkanInstance) {
         .instance = instance,

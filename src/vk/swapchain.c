@@ -176,7 +176,7 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
 }
 
 Swapchain
-newSwapchain(const RenderDevice* renderDevice, VkSurfaceKHR surface,
+newSwapchain(const Device* renderDevice, VkSurfaceKHR surface,
     int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight)
 {
     const PhysicalDevice* physDev = renderDevice->phys;

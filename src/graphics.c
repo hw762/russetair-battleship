@@ -53,11 +53,12 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     if (!SDL_Vulkan_CreateSurface(*pWindow, instance.instance, &surface)) {
         ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
     }
+    Queue presentQueue = deviceGetPresentQueue(&instance.renderDevice, surface);
     int w, h;
     SDL_Vulkan_GetDrawableSize(*pWindow, &w, &h);
     Swapchain swapchain
         = newSwapchain(&instance.renderDevice, surface, 3, true, w, h);
-    CommandPool pool = newCommandPool(&instance.renderDevice);
+    CommandPool pool = newCommandPool(&instance.renderDevice, &presentQueue);
     CommandBuffer cmdBuf = newCommandBuffer(&pool);
 
     // Pre-record clears
@@ -68,9 +69,11 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     swapchainAcquire(&swapchain);
     // TODO: queue submit
     const ImageView* view = swapchainCurrentView(&swapchain);
-    queueSubmit(&instance.renderDevice, &cmdBuf, view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, view->renderCompleteSemaphore, view->fence);
+    queueSubmit(&presentQueue, &cmdBuf,
+        view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        view->renderCompleteSemaphore, view->fence);
 
-    swapchainPresent(&swapchain, instance.renderDevice.presentQueue.handle);
+    swapchainPresent(&swapchain, presentQueue.handle);
 
     return e;
 }

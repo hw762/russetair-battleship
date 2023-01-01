@@ -15,7 +15,7 @@ typedef struct VulkanInstance {
     VkInstance instance;
     VkDebugUtilsMessengerEXT messenger;
     PhysicalDevice* arrPhysicalDevices;
-    RenderDevice renderDevice;
+    Device renderDevice;
 } VulkanInstance;
 
 extern ECS_COMPONENT_DECLARE(VulkanInstance);

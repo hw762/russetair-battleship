@@ -196,3 +196,18 @@ int getGraphicsQueueFamilyIndex(const PhysicalDevice* phys)
     ecs_trace("Not finding graphics queue family");
     return -1;
 }
+
+int getPresentQueueFamilyIndex(const PhysicalDevice* phys, VkSurfaceKHR surface)
+{
+    const VkQueueFamilyProperties* qfs = phys->arrQueueFamilyProps;
+    for (int i = 0; i < arrlen(qfs); ++i) {
+        VkBool32 supported;
+        vkGetPhysicalDeviceSurfaceSupportKHR(phys->handle, i, surface, &supported);
+        if (supported) {
+            ecs_trace("Found present queue family index [%d]", i);
+            return i;
+        }
+    }
+    ecs_trace("Not finding present queue family");
+    return -1;
+}

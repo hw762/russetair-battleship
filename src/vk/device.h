@@ -5,20 +5,21 @@
 struct PhysicalDevice;
 typedef struct PhysicalDevice PhysicalDevice;
 
-typedef struct Queue {
-    VkQueue handle;
-    int queueFamilyIndex;
-} Queue;
-
 struct CommandBuffer;
 typedef struct CommandBuffer CommandBuffer;
 
-typedef struct RenderDevice {
+typedef struct Device {
     VkDevice handle;
     const PhysicalDevice* phys;
-    Queue presentQueue;
-} RenderDevice;
+} Device;
 
-void queueSubmit(const RenderDevice* device, const CommandBuffer* cmdBuf, VkSemaphore waitSemaphore, int dstStageMask, VkSemaphore signalSemaphore, VkFence fence);
+Device newRenderDevice(PhysicalDevice* arrPhysicalDevices);
 
-RenderDevice newRenderDevice(PhysicalDevice* arrPhysicalDevices);
+typedef struct Queue {
+    VkQueue handle;
+    const Device* device;
+    int queueFamilyIndex;
+} Queue;
+Queue deviceGetGraphicsQueue(const Device* device);
+Queue deviceGetPresentQueue(const Device* device, VkSurfaceKHR surface);
+void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf, VkSemaphore waitSemaphore, int dstStageMask, VkSemaphore signalSemaphore, VkFence fence);
