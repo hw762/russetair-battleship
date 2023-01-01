@@ -72,7 +72,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
 }
 
 void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
-    VkSemaphore waitSemaphore, int dstStageMask,
+    VkSemaphore waitSemaphore, VkPipelineStageFlags dstStageMask,
     VkSemaphore signalSemaphore, VkFence fence)
 {
     ecs_trace("Submitting to device queue...");

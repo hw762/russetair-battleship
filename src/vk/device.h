@@ -22,4 +22,6 @@ typedef struct Queue {
 } Queue;
 Queue deviceGetGraphicsQueue(const Device* device);
 Queue deviceGetPresentQueue(const Device* device, VkSurfaceKHR surface);
-void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf, VkSemaphore waitSemaphore, int dstStageMask, VkSemaphore signalSemaphore, VkFence fence);
+void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
+    VkSemaphore waitSemaphore, VkPipelineStageFlags dstStageMask,
+    VkSemaphore signalSemaphore, VkFence fence);
