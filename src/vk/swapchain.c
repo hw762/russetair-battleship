@@ -270,7 +270,6 @@ bool swapchainPresent(Swapchain* swapchain, VkQueue queue)
               .pSwapchains = &swapchain->handle,
               .pImageIndices = &swapchain->currentFrame,
           };
-    swapchain->currentFrame = (swapchain->currentFrame + 1) % arrlen(swapchain->arrViews);
     switch (vkQueuePresentKHR(queue, &presentInfo)) {
     case VK_ERROR_OUT_OF_DATE_KHR:
         resize = true;
@@ -282,5 +281,6 @@ bool swapchainPresent(Swapchain* swapchain, VkQueue queue)
     default:
         ecs_abort(1, "Failed to present KHR");
     }
+    swapchain->currentFrame = (swapchain->currentFrame + 1) % arrlen(swapchain->arrViews);
     return resize;
 }
