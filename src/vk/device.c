@@ -86,7 +86,7 @@ void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
               .pWaitSemaphores = &waitSemaphore,
               .signalSemaphoreCount = 1,
               .pSignalSemaphores = &signalSemaphore,
-              .pWaitDstStageMask = dstStageMask,
+              .pWaitDstStageMask = &dstStageMask,
           };
     vkWaitForFences(queue->device->handle, 1, &fence, true, LONG_MAX);
     vkResetFences(queue->device->handle, 1, &fence);
