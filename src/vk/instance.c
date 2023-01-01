@@ -95,7 +95,9 @@ _getRequiredExtensions(const char** sdl_exts, uint32_t n_sdl_exts)
     const char** extensions = NULL;
     arrsetlen(extensions, n_sdl_exts);
     memcpy(extensions, sdl_exts, sizeof(*extensions) * n_sdl_exts);
+#ifdef __APPLE__
     arrput(extensions, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
     arrput(extensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     return extensions;
 }

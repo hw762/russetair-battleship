@@ -5,4 +5,6 @@ vk_src = files(
     'device.c',
     'swapchain.c',
     'pipeline.c',
+    'queue.c',
+    'command_buffer.c',
 )
