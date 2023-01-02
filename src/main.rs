@@ -1,21 +1,14 @@
-mod graphics;
-use graphics::*;
+use std::sync::Arc;
 
 use bytemuck::{Pod, Zeroable};
-use std::sync::Arc;
 use vulkano::{
     buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
     command_buffer::{
         allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
         RenderingAttachmentInfo, RenderingInfo,
     },
-    device::{
-        physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features,
-        QueueCreateInfo,
-    },
-    image::{view::ImageView, ImageAccess, ImageUsage, SwapchainImage},
+    image::{ImageAccess, SwapchainImage, view::ImageView},
     impl_vertex,
-    instance::{Instance, InstanceCreateInfo},
     memory::allocator::StandardMemoryAllocator,
     pipeline::{
         graphics::{
@@ -28,11 +21,10 @@ use vulkano::{
     },
     render_pass::{LoadOp, StoreOp},
     swapchain::{
-        acquire_next_image, AcquireError, Swapchain, SwapchainCreateInfo, SwapchainCreationError,
+        acquire_next_image, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
         SwapchainPresentInfo,
     },
     sync::{self, FlushError, GpuFuture},
-    Version, VulkanLibrary,
 };
 use vulkano_win::VkSurfaceBuild;
 use winit::{
@@ -40,6 +32,10 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
+
+use graphics::*;
+
+mod graphics;
 
 fn main() {
     let instance = VulkanInstance::new();

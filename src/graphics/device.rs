@@ -1,9 +1,10 @@
 use std::sync::Arc;
+
 use vulkano::device::{Device, DeviceCreateInfo, DeviceExtensions, Features, Queue, QueueCreateInfo};
 use vulkano::device::physical::PhysicalDeviceType;
-use vulkano::instance::Instance;
 use vulkano::swapchain::Surface;
 use vulkano::Version;
+
 use crate::graphics::VulkanInstance;
 
 pub struct RenderDevice {
@@ -55,7 +56,7 @@ impl RenderDevice {
             physical_device.properties().device_name,
             physical_device.properties().device_type,
         );
-        let (device, mut queues) = Device::new(
+        let (device, queues) = Device::new(
             // Which physical device to connect to.
             physical_device,
             DeviceCreateInfo {

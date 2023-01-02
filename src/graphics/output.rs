@@ -1,10 +1,10 @@
 use std::sync::Arc;
+
 use vulkano::image::{ImageUsage, SwapchainImage};
-use vulkano::instance::Instance;
 use vulkano::swapchain::{Surface, Swapchain, SwapchainCreateInfo};
 use winit::window::Window;
+
 use crate::graphics::device::RenderDevice;
-use crate::graphics::instance::VulkanInstance;
 
 pub struct RenderOutput {
     pub surface: Arc<Surface>,
@@ -14,7 +14,7 @@ pub struct RenderOutput {
 
 impl RenderOutput {
     pub fn new(surface: Arc<Surface>, device: &RenderDevice) -> Self {
-        let (mut swapchain, images) = {
+        let (swapchain, images) = {
             let surface_capabilities = device.device
                 .physical_device()
                 .surface_capabilities(&surface, Default::default())

@@ -1,9 +1,9 @@
 use std::sync::Arc;
-use vulkano::device::{Device, DeviceCreateInfo, DeviceExtensions, Features, Queue, QueueCreateInfo};
+
+use vulkano::{VulkanLibrary};
+
+
 use vulkano::instance::{Instance, InstanceCreateInfo};
-use vulkano::swapchain::Surface;
-use vulkano::{Version, VulkanLibrary};
-use vulkano::device::physical::{PhysicalDevice, PhysicalDeviceType};
 
 pub struct VulkanInstance {
     pub instance: Arc<Instance>,
