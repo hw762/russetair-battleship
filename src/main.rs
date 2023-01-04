@@ -2,6 +2,7 @@ mod graphics;
 
 use fltk::{prelude::*, *};
 use wgpu::include_wgsl;
+use crate::graphics::Window;
 
 struct State {
     device: wgpu::Device,
@@ -82,10 +83,8 @@ impl State {
 
 fn main() {
     let app = app::App::default();
-    let mut win = window::Window::default().with_size(400, 300);
-    win.end();
-    win.show();
-    let state = pollster::block_on(State::new(&win));
+    let win = Window::new();
+    let state = pollster::block_on(State::new(win.window()));
     while app.wait() {
         let frame = state
             .surface
