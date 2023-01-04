@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-//    implementation("org.codehaus.groovy:groovy-all:3.0.14")
+    implementation("io.github.quillraven.fleks:Fleks:2.2")
 }
 
 application {
