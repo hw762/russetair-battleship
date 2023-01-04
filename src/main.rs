@@ -16,40 +16,13 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
 };
 
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::JsCast;
-#[cfg(target_arch = "wasm32")]
-use web_sys::HtmlCanvasElement;
-#[cfg(target_arch = "wasm32")]
-use winit::platform::web::WindowBuilderExtWebSys;
-
 pub fn main() {
-    #[cfg(target_arch = "wasm32")]
-        let canvas_element = {
-        console_log::init_with_level(log::Level::Debug)
-            .expect("could not initialize logger");
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
-        web_sys::window()
-            .and_then(|win| win.document())
-            .and_then(|doc| doc.get_element_by_id("iced_canvas"))
-            .and_then(|element| element.dyn_into::<HtmlCanvasElement>().ok())
-            .expect("Canvas with id `iced_canvas` is missing")
-    };
-    #[cfg(not(target_arch = "wasm32"))]
     env_logger::init();
 
     // Initialize winit
     let event_loop = EventLoop::new();
 
-    #[cfg(target_arch = "wasm32")]
-        let window = winit::window::WindowBuilder::new()
-        .with_canvas(Some(canvas_element))
-        .build(&event_loop)
-        .expect("Failed to build winit window");
-
-    #[cfg(not(target_arch = "wasm32"))]
-        let window = winit::window::Window::new(&event_loop).unwrap();
+    let window = winit::window::Window::new(&event_loop).unwrap();
 
     let physical_size = window.inner_size();
     let mut viewport = Viewport::with_physical_size(
@@ -61,11 +34,7 @@ pub fn main() {
     let mut clipboard = Clipboard::connect(&window);
 
     // Initialize wgpu
-
-    #[cfg(target_arch = "wasm32")]
-        let default_backend = wgpu::Backends::GL;
-    #[cfg(not(target_arch = "wasm32"))]
-        let default_backend = wgpu::Backends::PRIMARY;
+    let default_backend = wgpu::Backends::PRIMARY;
 
     let backend =
         wgpu::util::backend_bits_from_env().unwrap_or(default_backend);
@@ -88,8 +57,7 @@ pub fn main() {
             let needed_limits = wgpu::Limits::downlevel_webgl2_defaults()
             .using_resolution(adapter.limits());
 
-        #[cfg(not(target_arch = "wasm32"))]
-            let needed_limits = wgpu::Limits::default();
+        let needed_limits = wgpu::Limits::default();
 
         (
             surface
@@ -214,7 +182,7 @@ pub fn main() {
                             width: size.width,
                             height: size.height,
                             present_mode: wgpu::PresentMode::AutoVsync,
-                            alpha_mode: wgpu::CompositeAlphaMode::Auto
+                            alpha_mode: wgpu::CompositeAlphaMode::Auto,
                         },
                     );
 
@@ -270,7 +238,6 @@ pub fn main() {
 
                         // And recall staging buffers
                         staging_belt.recall();
-
                     }
                     Err(error) => match error {
                         wgpu::SurfaceError::OutOfMemory => {
