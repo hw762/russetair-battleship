@@ -1,120 +1,289 @@
-mod graphics;
+mod controls;
+mod scene;
 
-use fltk::{prelude::*, *};
-use wgpu::include_wgsl;
-use crate::graphics::Window;
+use controls::Controls;
+use scene::Scene;
 
-struct State {
-    device: wgpu::Device,
-    surface: wgpu::Surface,
-    queue: wgpu::Queue,
-    render_pipeline: wgpu::RenderPipeline,
-}
+use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
+use iced_winit::{
+    conversion, futures, program, renderer, winit, Clipboard, Color, Debug,
+    Size,
+};
 
-impl State {
-    pub async fn new(win: &window::Window) -> Self {
-        let size = (win.pixel_w() as _, win.pixel_h() as _);
-        // Instance, surface, adapter, device
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(win) };
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            })
+use winit::{
+    dpi::PhysicalPosition,
+    event::{Event, ModifiersState, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+};
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
+#[cfg(target_arch = "wasm32")]
+use web_sys::HtmlCanvasElement;
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::WindowBuilderExtWebSys;
+
+pub fn main() {
+    #[cfg(target_arch = "wasm32")]
+        let canvas_element = {
+        console_log::init_with_level(log::Level::Debug)
+            .expect("could not initialize logger");
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+        web_sys::window()
+            .and_then(|win| win.document())
+            .and_then(|doc| doc.get_element_by_id("iced_canvas"))
+            .and_then(|element| element.dyn_into::<HtmlCanvasElement>().ok())
+            .expect("Canvas with id `iced_canvas` is missing")
+    };
+    #[cfg(not(target_arch = "wasm32"))]
+    env_logger::init();
+
+    // Initialize winit
+    let event_loop = EventLoop::new();
+
+    #[cfg(target_arch = "wasm32")]
+        let window = winit::window::WindowBuilder::new()
+        .with_canvas(Some(canvas_element))
+        .build(&event_loop)
+        .expect("Failed to build winit window");
+
+    #[cfg(not(target_arch = "wasm32"))]
+        let window = winit::window::Window::new(&event_loop).unwrap();
+
+    let physical_size = window.inner_size();
+    let mut viewport = Viewport::with_physical_size(
+        Size::new(physical_size.width, physical_size.height),
+        window.scale_factor(),
+    );
+    let mut cursor_position = PhysicalPosition::new(-1.0, -1.0);
+    let mut modifiers = ModifiersState::default();
+    let mut clipboard = Clipboard::connect(&window);
+
+    // Initialize wgpu
+
+    #[cfg(target_arch = "wasm32")]
+        let default_backend = wgpu::Backends::GL;
+    #[cfg(not(target_arch = "wasm32"))]
+        let default_backend = wgpu::Backends::PRIMARY;
+
+    let backend =
+        wgpu::util::backend_bits_from_env().unwrap_or(default_backend);
+
+    let instance = wgpu::Instance::new(backend);
+    let surface = unsafe { instance.create_surface(&window) };
+
+    let (format, (device, queue)) = futures::executor::block_on(async {
+        let adapter = wgpu::util::initialize_adapter_from_env_or_default(
+            &instance,
+            backend,
+            Some(&surface),
+        )
             .await
-            .expect("Failed to find an appropriate adapter");
-        let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("device"),
-                    features: wgpu::Features::empty(),
-                    limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-                },
-                None,
-            )
-            .await
-            .expect("Failed to create device");
-        let swapchain_format = surface.get_supported_formats(&adapter)[0];
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: swapchain_format,
-            width: size.0,
-            height: size.1,
-            present_mode: wgpu::PresentMode::Fifo,
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
-        };
-        surface.configure(&device, &config);
-        // Pipeline
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("pipeline_layout"),
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-        });
-        let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("render_pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(swapchain_format.into())],
-            }),
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-        });
+            .expect("No suitable GPU adapters found on the system!");
 
-        Self {
-            device,
-            surface,
-            queue,
-            render_pipeline,
-        }
-    }
-}
+        let adapter_features = adapter.features();
 
-fn main() {
-    let app = app::App::default();
-    let win = Window::new();
-    let state = pollster::block_on(State::new(win.window()));
-    while app.wait() {
-        let frame = state
-            .surface
-            .get_current_texture()
-            .expect("Failed to acquire next swap chain texture");
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = state
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("command_encoder"),
-            });
-        {
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("render_pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
-                        store: true,
+        #[cfg(target_arch = "wasm32")]
+            let needed_limits = wgpu::Limits::downlevel_webgl2_defaults()
+            .using_resolution(adapter.limits());
+
+        #[cfg(not(target_arch = "wasm32"))]
+            let needed_limits = wgpu::Limits::default();
+
+        (
+            surface
+                .get_supported_formats(&adapter)
+                .first()
+                .copied()
+                .expect("Get preferred format"),
+            adapter
+                .request_device(
+                    &wgpu::DeviceDescriptor {
+                        label: None,
+                        features: adapter_features & wgpu::Features::default(),
+                        limits: needed_limits,
                     },
-                })],
-                depth_stencil_attachment: None,
-            });
-            rpass.set_pipeline(&state.render_pipeline);
-            rpass.draw(0..3, 0..1);
+                    None,
+                )
+                .await
+                .expect("Request device"),
+        )
+    });
+
+    surface.configure(
+        &device,
+        &wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format,
+            width: physical_size.width,
+            height: physical_size.height,
+            present_mode: wgpu::PresentMode::AutoVsync,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+        },
+    );
+
+    let mut resized = false;
+
+    // Initialize staging belt
+    let mut staging_belt = wgpu::util::StagingBelt::new(5 * 1024);
+
+    // Initialize scene and GUI controls
+    let scene = Scene::new(&device, format);
+    let controls = Controls::new();
+
+    // Initialize iced
+    let mut debug = Debug::new();
+    let mut renderer =
+        Renderer::new(Backend::new(&device, Settings::default(), format));
+
+    let mut state = program::State::new(
+        controls,
+        viewport.logical_size(),
+        &mut renderer,
+        &mut debug,
+    );
+
+    // Run event loop
+    event_loop.run(move |event, _, control_flow| {
+        // You should change this if you want to render continuosly
+        *control_flow = ControlFlow::Wait;
+
+        match event {
+            Event::WindowEvent { event, .. } => {
+                match event {
+                    WindowEvent::CursorMoved { position, .. } => {
+                        cursor_position = position;
+                    }
+                    WindowEvent::ModifiersChanged(new_modifiers) => {
+                        modifiers = new_modifiers;
+                    }
+                    WindowEvent::Resized(_) => {
+                        resized = true;
+                    }
+                    WindowEvent::CloseRequested => {
+                        *control_flow = ControlFlow::Exit;
+                    }
+                    _ => {}
+                }
+
+                // Map window event to iced event
+                if let Some(event) = iced_winit::conversion::window_event(
+                    &event,
+                    window.scale_factor(),
+                    modifiers,
+                ) {
+                    state.queue_event(event);
+                }
+            }
+            Event::MainEventsCleared => {
+                // If there are events pending
+                if !state.is_queue_empty() {
+                    // We update iced
+                    let _ = state.update(
+                        viewport.logical_size(),
+                        conversion::cursor_position(
+                            cursor_position,
+                            viewport.scale_factor(),
+                        ),
+                        &mut renderer,
+                        &iced_wgpu::Theme::Dark,
+                        &renderer::Style { text_color: Color::WHITE },
+                        &mut clipboard,
+                        &mut debug,
+                    );
+
+                    // and request a redraw
+                    window.request_redraw();
+                }
+            }
+            Event::RedrawRequested(_) => {
+                if resized {
+                    let size = window.inner_size();
+
+                    viewport = Viewport::with_physical_size(
+                        Size::new(size.width, size.height),
+                        window.scale_factor(),
+                    );
+
+                    surface.configure(
+                        &device,
+                        &wgpu::SurfaceConfiguration {
+                            format,
+                            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                            width: size.width,
+                            height: size.height,
+                            present_mode: wgpu::PresentMode::AutoVsync,
+                            alpha_mode: wgpu::CompositeAlphaMode::Auto
+                        },
+                    );
+
+                    resized = false;
+                }
+
+                match surface.get_current_texture() {
+                    Ok(frame) => {
+                        let mut encoder = device.create_command_encoder(
+                            &wgpu::CommandEncoderDescriptor { label: None },
+                        );
+
+                        let program = state.program();
+
+                        let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+                        {
+                            // We clear the frame
+                            let mut render_pass = scene.clear(
+                                &view,
+                                &mut encoder,
+                                program.background_color(),
+                            );
+
+                            // Draw the scene
+                            scene.draw(&mut render_pass);
+                        }
+
+                        // And then iced on top
+                        renderer.with_primitives(|backend, primitive| {
+                            backend.present(
+                                &device,
+                                &mut staging_belt,
+                                &mut encoder,
+                                &view,
+                                primitive,
+                                &viewport,
+                                &debug.overlay(),
+                            );
+                        });
+
+                        // Then we submit the work
+                        staging_belt.finish();
+                        queue.submit(Some(encoder.finish()));
+                        frame.present();
+
+                        // Update the mouse cursor
+                        window.set_cursor_icon(
+                            iced_winit::conversion::mouse_interaction(
+                                state.mouse_interaction(),
+                            ),
+                        );
+
+                        // And recall staging buffers
+                        staging_belt.recall();
+
+                    }
+                    Err(error) => match error {
+                        wgpu::SurfaceError::OutOfMemory => {
+                            panic!("Swapchain error: {}. Rendering cannot continue.", error)
+                        }
+                        _ => {
+                            // Try rendering again next frame.
+                            window.request_redraw();
+                        }
+                    },
+                }
+            }
+            _ => {}
         }
-        state.queue.submit(Some(encoder.finish()));
-        frame.present();
-    }
+    })
 }

@@ -1,3 +1,8 @@
+[workspace]
+
+members = [
+]
+
 [package]
 name = "russetair-battleship"
 version = "0.1.0"
@@ -7,13 +12,20 @@ edition = "2021"
 
 [dependencies]
 
+log = "0.4"
+env_logger = "0.9"
+
+chrono = "0.4"
+
 bytemuck = "1"
 
 hecs = "0.9"
 
-fltk = { version = "1", features = ["fltk-bundled", "rwh05"] }
+winit = "0.27"
 wgpu = "0.14"
+pollster = "*"
 
-pollster = "0.2"
+iced_winit = "0.6"
+iced_wgpu = "0.7"
 
-uv = { package = "ultraviolet", versino = "0.9" }
+ultraviolet = "0.9"
