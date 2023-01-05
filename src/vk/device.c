@@ -6,12 +6,20 @@
 
 #include "physical_device.h"
 
+#ifdef __APPLE__
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     "VK_KHR_portability_subset",
 };
 
 static const uint32_t _nRequiredExtensions = 2;
+#else
+static const char* _requiredExtensions[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+};
+
+static const uint32_t _nRequiredExtensions = 1;
+#endif
 
 static VkQueue
 _newDeviceQueue(VkDevice device, int queueFamilyIndex, int queueIndex)
