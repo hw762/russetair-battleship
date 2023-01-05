@@ -1,5 +1,3 @@
-#define NK_IMPLEMENTATION
-
 #include <math.h>
 
 #define NK_COS cosf

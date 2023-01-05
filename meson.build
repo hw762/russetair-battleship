@@ -12,6 +12,16 @@ add_global_arguments([
   '-Wno-newline-eof',
   ], language: 'c')
 
+add_global_arguments([
+  '-DNK_INCLUDE_FIXED_TYPES',
+  '-DNK_INCLUDE_DEFAULT_ALLOCATOR',
+  '-DNK_INCLUDE_STANDARD_IO',
+  '-DNK_INCLUDE_VERTEX_BUFFER_OUTPUT',
+  '-DNK_INCLUDE_FONT_BAKING',
+  '-DNK_INCLUDE_DEFAULT_FONT',
+  '-DNK_ZERO_COMMAND_MEMORY',
+], language: 'c')
+
 cmake = import('cmake')
 
 # Graphics
