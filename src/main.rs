@@ -53,10 +53,6 @@ pub fn main() {
 
         let adapter_features = adapter.features();
 
-        #[cfg(target_arch = "wasm32")]
-            let needed_limits = wgpu::Limits::downlevel_webgl2_defaults()
-            .using_resolution(adapter.limits());
-
         let needed_limits = wgpu::Limits::default();
 
         (
