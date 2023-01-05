@@ -8,7 +8,7 @@
             "name": "Launch GDB",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/c_battleship",
+            "program": "${workspaceFolder}/builddir/c_battleship",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -3,10 +3,12 @@
 #include <flecs.h>
 #include <vulkan/vulkan.h>
 
+#include "command_buffer.h"
 #include "device.h"
 #include "instance.h"
 #include "physical_device.h"
 #include "pipeline.h"
+#include "queue.h"
 #include "swapchain.h"
 
 #define vkCheck(stmt) if ((stmt) != VK_SUCCESS)

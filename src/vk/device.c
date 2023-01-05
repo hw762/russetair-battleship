@@ -6,9 +6,20 @@
 
 #include "physical_device.h"
 
+#ifdef __APPLE__
+static const char* _requiredExtensions[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_KHR_portability_subset",
+};
+
+static const uint32_t _nRequiredExtensions = 2;
+#else
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
+
+static const uint32_t _nRequiredExtensions = 1;
+#endif
 
 static VkQueue
 _newDeviceQueue(VkDevice device, int queueFamilyIndex, int queueIndex)
@@ -54,7 +65,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     VkDeviceCreateInfo deviceCI = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .ppEnabledExtensionNames = _requiredExtensions,
-        .enabledExtensionCount = 1,
+        .enabledExtensionCount = _nRequiredExtensions,
         .pEnabledFeatures = &features,
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
@@ -69,31 +80,6 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
 
     ecs_log_pop();
     return device;
-}
-
-void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
-    VkSemaphore waitSemaphore, VkPipelineStageFlags dstStageMask,
-    VkSemaphore signalSemaphore, VkFence fence)
-{
-    ecs_trace("Submitting to device queue...");
-    ecs_log_push();
-    VkSubmitInfo submit
-        = {
-              .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-              .commandBufferCount = 1,
-              .pCommandBuffers = &cmdBuf->handle,
-              .waitSemaphoreCount = 1,
-              .pWaitSemaphores = &waitSemaphore,
-              .signalSemaphoreCount = 1,
-              .pSignalSemaphores = &signalSemaphore,
-              .pWaitDstStageMask = &dstStageMask,
-          };
-    vkCheck(vkQueueSubmit(queue->handle, 1, &submit, fence))
-    {
-        ecs_abort(1, "Failed to submit queue");
-    }
-    ecs_trace("Done submitting to device queue");
-    ecs_log_pop();
 }
 
 Device newRenderDevice(PhysicalDevice* arrPhysicalDevices)

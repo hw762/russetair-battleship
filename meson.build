@@ -12,6 +12,16 @@ add_global_arguments([
   '-Wno-newline-eof',
   ], language: 'c')
 
+add_global_arguments([
+  '-DNK_INCLUDE_FIXED_TYPES',
+  '-DNK_INCLUDE_DEFAULT_ALLOCATOR',
+  '-DNK_INCLUDE_STANDARD_IO',
+  '-DNK_INCLUDE_VERTEX_BUFFER_OUTPUT',
+  '-DNK_INCLUDE_FONT_BAKING',
+  '-DNK_INCLUDE_DEFAULT_FONT',
+  '-DNK_ZERO_COMMAND_MEMORY',
+], language: 'c')
+
 cmake = import('cmake')
 
 # Graphics
@@ -24,9 +34,6 @@ gfx_deps = [vulkan_dep, sdl2_dep, cglm_dep]
 # Assimp model loader
 assimp_dep = dependency('assimp')
 
-# SQLite3
-sqlite3_dep = dependency('sqlite3')
-
 # Others
 m_dep = cc.find_library('m', required : false)
 
@@ -34,12 +41,14 @@ subdir('src')
 flecs_subproject = subproject('flecs', default_options: ['default_library=static'])
 flecs_dep = flecs_subproject.get_variable('flecs_dep')
 thirdparty_src = files(
-  'thirdparty/stb/stb.c'
+  'thirdparty/stb/stb.c',
+  'thirdparty/nuklear/nuklear.c',
 )
 
 src_inc = include_directories('src')
 thirdparty_inc = include_directories([
   'thirdparty/stb',
+  'thirdparty/nuklear',
 ])
 
 exe = executable('c_battleship', [
@@ -51,7 +60,6 @@ exe = executable('c_battleship', [
     gfx_deps,
     flecs_dep,
     assimp_dep,
-    sqlite3_dep,
     m_dep,
   ],
   include_directories : [
