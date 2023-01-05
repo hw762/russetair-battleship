@@ -80,3 +80,32 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
 
     return e;
 }
+
+#include <nuklear.h>
+
+ECS_PREFAB_DECLARE(Nuklear);
+ECS_COMPONENT_DECLARE(NkContext);
+
+void registerNuklear(ecs_world_t* ecs)
+{
+    ECS_COMPONENT_DEFINE(ecs, NkContext);
+    ECS_PREFAB_DEFINE(ecs, Nuklear);
+}
+
+ecs_entity_t createNuklear(ecs_world_t* ecs)
+{
+    ecs_entity_t e = ecs_new_w_pair(ecs, EcsIsA, Nuklear);
+    struct nk_font_atlas atlas;
+    struct nk_font* font;
+    const void* image;
+    int w, h;
+    NkContext* context
+        = ecs_emplace(ecs, e, NkContext);
+    nk_font_atlas_init_default(&atlas);
+    font = nk_font_atlas_add_default(&atlas, 13, 0);
+    image = nk_font_atlas_bake(&atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
+    // TODO: upload to device
+    nk_font_atlas_end(&atlas, nk_handle_id(0), NULL);
+    nk_init_default(context, &font->handle);
+    return e;
+}
