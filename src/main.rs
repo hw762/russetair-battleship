@@ -1,398 +1,252 @@
-use std::sync::Arc;
+mod controls;
+mod scene;
 
-use bytemuck::{Pod, Zeroable};
-use vulkano::{
-    buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
-    command_buffer::{
-        allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
-        RenderingAttachmentInfo, RenderingInfo,
-    },
-    image::{ImageAccess, SwapchainImage, view::ImageView},
-    impl_vertex,
-    memory::allocator::StandardMemoryAllocator,
-    pipeline::{
-        graphics::{
-            input_assembly::InputAssemblyState,
-            render_pass::PipelineRenderingCreateInfo,
-            vertex_input::BuffersDefinition,
-            viewport::{Viewport, ViewportState},
-        },
-        GraphicsPipeline,
-    },
-    render_pass::{LoadOp, StoreOp},
-    swapchain::{
-        acquire_next_image, AcquireError, SwapchainCreateInfo, SwapchainCreationError,
-        SwapchainPresentInfo,
-    },
-    sync::{self, FlushError, GpuFuture},
+use controls::Controls;
+use scene::Scene;
+
+use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
+use iced_winit::{
+    conversion, futures, program, renderer, winit, Clipboard, Color, Debug,
+    Size,
 };
-use vulkano_win::VkSurfaceBuild;
+
 use winit::{
-    event::{Event, WindowEvent},
+    dpi::PhysicalPosition,
+    event::{Event, ModifiersState, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
 };
 
-use graphics::*;
+pub fn main() {
+    env_logger::init();
 
-mod graphics;
-
-fn main() {
-    let instance = VulkanInstance::new();
-
+    // Initialize winit
     let event_loop = EventLoop::new();
-    let surface = WindowBuilder::new()
-        .build_vk_surface(&event_loop, instance.instance.clone())
-        .unwrap();
-    let device = RenderDevice::new(surface.clone(), &instance);
-    let mut output = RenderOutput::new(surface.clone(), &device);
 
-    // Since we can request multiple queues, the `queues` variable is in fact an iterator. We
-    // only use one queue in this example, so we just retrieve the first and only element of the
-    // iterator.
-    let queue = device.queues[0].clone();
+    let window = winit::window::Window::new(&event_loop).unwrap();
 
-    // Before we can draw on the surface, we have to create what is called a swapchain. Creating
-    // a swapchain allocates the color buffers that will contain the image that will ultimately
-    // be visible on the screen. These images are returned alongside the swapchain.
+    let physical_size = window.inner_size();
+    let mut viewport = Viewport::with_physical_size(
+        Size::new(physical_size.width, physical_size.height),
+        window.scale_factor(),
+    );
+    let mut cursor_position = PhysicalPosition::new(-1.0, -1.0);
+    let mut modifiers = ModifiersState::default();
+    let mut clipboard = Clipboard::connect(&window);
 
+    // Initialize wgpu
+    let default_backend = wgpu::Backends::PRIMARY;
 
-    let memory_allocator = StandardMemoryAllocator::new_default(device.device.clone());
+    let backend =
+        wgpu::util::backend_bits_from_env().unwrap_or(default_backend);
 
-    // We now create a buffer that will store the shape of our triangle.
-    // We use #[repr(C)] here to force rustc to not do anything funky with our data, although for this
-    // particular example, it doesn't actually change the in-memory representation.
-    #[repr(C)]
-    #[derive(Clone, Copy, Debug, Default, Zeroable, Pod)]
-    struct Vertex {
-        position: [f32; 2],
-    }
-    impl_vertex!(Vertex, position);
+    let instance = wgpu::Instance::new(backend);
+    let surface = unsafe { instance.create_surface(&window) };
 
-    let vertices = [
-        Vertex {
-            position: [-0.5, -0.25],
-        },
-        Vertex {
-            position: [0.0, 0.5],
-        },
-        Vertex {
-            position: [0.25, -0.1],
-        },
-    ];
-    let vertex_buffer = CpuAccessibleBuffer::from_iter(
-        &memory_allocator,
-        BufferUsage {
-            vertex_buffer: true,
-            ..BufferUsage::empty()
-        },
-        false,
-        vertices,
-    )
-        .unwrap();
+    let (format, (device, queue)) = futures::executor::block_on(async {
+        let adapter = wgpu::util::initialize_adapter_from_env_or_default(
+            &instance,
+            backend,
+            Some(&surface),
+        )
+            .await
+            .expect("No suitable GPU adapters found on the system!");
 
-    // The next step is to create the shaders.
-    //
-    // The raw shader creation API provided by the vulkano library is unsafe for various
-    // reasons, so The `shader!` macro provides a way to generate a Rust module from GLSL
-    // source - in the example below, the source is provided as a string input directly to
-    // the shader, but a path to a source file can be provided as well. Note that the user
-    // must specify the type of shader (e.g., "vertex," "fragment, etc.") using the `ty`
-    // option of the macro.
-    //
-    // The module generated by the `shader!` macro includes a `load` function which loads
-    // the shader using an input logical device. The module also includes type definitions
-    // for layout structures defined in the shader source, for example, uniforms and push
-    // constants.
-    //
-    // A more detailed overview of what the `shader!` macro generates can be found in the
-    // `vulkano-shaders` crate docs. You can view them at https://docs.rs/vulkano-shaders/
-    mod vs {
-        vulkano_shaders::shader! {
-            ty: "vertex",
-            src: "
-				#version 450
+        let adapter_features = adapter.features();
 
-				layout(location = 0) in vec2 position;
+        let needed_limits = wgpu::Limits::default();
 
-				void main() {
-					gl_Position = vec4(position, 0.0, 1.0);
-				}
-			"
-        }
-    }
-
-    mod fs {
-        vulkano_shaders::shader! {
-            ty: "fragment",
-            src: "
-				#version 450
-
-				layout(location = 0) out vec4 f_color;
-
-				void main() {
-					f_color = vec4(1.0, 0.0, 0.0, 1.0);
-				}
-			"
-        }
-    }
-
-    let vs = vs::load(device.device.clone()).unwrap();
-    let fs = fs::load(device.device.clone()).unwrap();
-
-    // At this point, OpenGL initialization would be finished. However in Vulkan it is not. OpenGL
-    // implicitly does a lot of computation whenever you draw. In Vulkan, you have to do all this
-    // manually.
-
-    // Before we draw we have to create what is called a pipeline. This is similar to an OpenGL
-    // program, but much more specific.
-    let pipeline = GraphicsPipeline::start()
-        // We describe the formats of attachment images where the colors, depth and/or stencil
-        // information will be written. The pipeline will only be usable with this particular
-        // configuration of the attachment images.
-        .render_pass(PipelineRenderingCreateInfo {
-            // We specify a single color attachment that will be rendered to. When we begin
-            // rendering, we will specify a swapchain image to be used as this attachment, so here
-            // we set its format to be the same format as the swapchain.
-            color_attachment_formats: vec![Some(output.swapchain.image_format())],
-            ..Default::default()
-        })
-        // We need to indicate the layout of the vertices.
-        .vertex_input_state(BuffersDefinition::new().vertex::<Vertex>())
-        // The content of the vertex buffer describes a list of triangles.
-        .input_assembly_state(InputAssemblyState::new())
-        // A Vulkan shader can in theory contain multiple entry points, so we have to specify
-        // which one.
-        .vertex_shader(vs.entry_point("main").unwrap(), ())
-        // Use a resizable viewport set to draw over the entire window
-        .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-        // See `vertex_shader`.
-        .fragment_shader(fs.entry_point("main").unwrap(), ())
-        // Now that our builder is filled, we call `build()` to obtain an actual pipeline.
-        .build(device.device.clone())
-        .unwrap();
-
-    // Dynamic viewports allow us to recreate just the viewport when the window is resized
-    // Otherwise we would have to recreate the whole pipeline.
-    let mut viewport = Viewport {
-        origin: [0.0, 0.0],
-        dimensions: [0.0, 0.0],
-        depth_range: 0.0..1.0,
-    };
-
-    // When creating the swapchain, we only created plain images. To use them as an attachment for
-    // rendering, we must wrap then in an image view.
-    //
-    // Since we need to draw to multiple images, we are going to create a different image view for
-    // each image.
-    let mut attachment_image_views = window_size_dependent_setup(&output.images, &mut viewport);
-
-    // Before we can start creating and recording command buffers, we need a way of allocating
-    // them. Vulkano provides a command buffer allocator, which manages raw Vulkan command pools
-    // underneath and provides a safe interface for them.
-    let command_buffer_allocator =
-        StandardCommandBufferAllocator::new(device.device.clone(), Default::default());
-
-    // Initialization is finally finished!
-
-    // In some situations, the swapchain will become invalid by itself. This includes for example
-    // when the window is resized (as the images of the swapchain will no longer match the
-    // window's) or, on Android, when the application went to the background and goes back to the
-    // foreground.
-    //
-    // In this situation, acquiring a swapchain image or presenting it will return an error.
-    // Rendering to an image of that swapchain will not produce any error, but may or may not work.
-    // To continue rendering, we need to recreate the swapchain by creating a new swapchain.
-    // Here, we remember that we need to do this for the next loop iteration.
-    let mut recreate_swapchain = false;
-
-    // In the loop below we are going to submit commands to the GPU. Submitting a command produces
-    // an object that implements the `GpuFuture` trait, which holds the resources for as long as
-    // they are in use by the GPU.
-    //
-    // Destroying the `GpuFuture` blocks until the GPU is finished executing it. In order to avoid
-    // that, we store the submission of the previous frame here.
-    let mut previous_frame_end = Some(sync::now(device.device.clone()).boxed());
-
-    event_loop.run(move |event, _, control_flow| {
-        match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                *control_flow = ControlFlow::Exit;
-            }
-            Event::WindowEvent {
-                event: WindowEvent::Resized(_),
-                ..
-            } => {
-                recreate_swapchain = true;
-            }
-            Event::RedrawEventsCleared => {
-                // It is important to call this function from time to time, otherwise resources will keep
-                // accumulating and you will eventually reach an out of memory error.
-                // Calling this function polls various fences in order to determine what the GPU has
-                // already processed, and frees the resources that are no longer needed.
-                previous_frame_end.as_mut().unwrap().cleanup_finished();
-
-                // Whenever the window resizes we need to recreate everything dependent on the window size.
-                // In this example that includes the swapchain, the framebuffers and the dynamic state viewport.
-                if recreate_swapchain {
-                    // Get the new dimensions of the window.
-                    let window = surface.object().unwrap().downcast_ref::<Window>().unwrap();
-
-                    let (new_swapchain, new_images) =
-                        match output.swapchain.recreate(SwapchainCreateInfo {
-                            image_extent: window.inner_size().into(),
-                            ..output.swapchain.create_info()
-                        }) {
-                            Ok(r) => r,
-                            // This error tends to happen when the user is manually resizing the window.
-                            // Simply restarting the loop is the easiest way to fix this issue.
-                            Err(SwapchainCreationError::ImageExtentNotSupported { .. }) => return,
-                            Err(e) => panic!("Failed to recreate swapchain: {:?}", e),
-                        };
-
-                    output.swapchain = new_swapchain;
-                    // Now that we have new swapchain images, we must create new image views from
-                    // them as well.
-                    attachment_image_views =
-                        window_size_dependent_setup(&new_images, &mut viewport);
-                    recreate_swapchain = false;
-                }
-
-                // Before we can draw on the output, we have to *acquire* an image from the swapchain. If
-                // no image is available (which happens if you submit draw commands too quickly), then the
-                // function will block.
-                // This operation returns the index of the image that we are allowed to draw upon.
-                //
-                // This function can block if no image is available. The parameter is an optional timeout
-                // after which the function call will return an error.
-                let (image_index, suboptimal, acquire_future) =
-                    match acquire_next_image(output.swapchain.clone(), None) {
-                        Ok(r) => r,
-                        Err(AcquireError::OutOfDate) => {
-                            recreate_swapchain = true;
-                            return;
-                        }
-                        Err(e) => panic!("Failed to acquire next image: {:?}", e),
-                    };
-
-                // acquire_next_image can be successful, but suboptimal. This means that the swapchain image
-                // will still work, but it may not display correctly. With some drivers this can be when
-                // the window resizes, but it may not cause the swapchain to become out of date.
-                if suboptimal {
-                    recreate_swapchain = true;
-                }
-
-                // In order to draw, we have to build a *command buffer*. The command buffer object holds
-                // the list of commands that are going to be executed.
-                //
-                // Building a command buffer is an expensive operation (usually a few hundred
-                // microseconds), but it is known to be a hot path in the driver and is expected to be
-                // optimized.
-                //
-                // Note that we have to pass a queue family when we create the command buffer. The command
-                // buffer will only be executable on that given queue family.
-                let mut builder = AutoCommandBufferBuilder::primary(
-                    &command_buffer_allocator,
-                    queue.queue_family_index(),
-                    CommandBufferUsage::OneTimeSubmit,
+        (
+            surface
+                .get_supported_formats(&adapter)
+                .first()
+                .copied()
+                .expect("Get preferred format"),
+            adapter
+                .request_device(
+                    &wgpu::DeviceDescriptor {
+                        label: None,
+                        features: adapter_features & wgpu::Features::default(),
+                        limits: needed_limits,
+                    },
+                    None,
                 )
-                    .unwrap();
+                .await
+                .expect("Request device"),
+        )
+    });
 
-                builder
-                    // Before we can draw, we have to *enter a render pass*. We specify which
-                    // attachments we are going to use for rendering here, which needs to match
-                    // what was previously specified when creating the pipeline.
-                    .begin_rendering(RenderingInfo {
-                        // As before, we specify one color attachment, but now we specify
-                        // the image view to use as well as how it should be used.
-                        color_attachments: vec![Some(RenderingAttachmentInfo {
-                            // `Clear` means that we ask the GPU to clear the content of this
-                            // attachment at the start of rendering.
-                            load_op: LoadOp::Clear,
-                            // `Store` means that we ask the GPU to store the rendered output
-                            // in the attachment image. We could also ask it to discard the result.
-                            store_op: StoreOp::Store,
-                            // The value to clear the attachment with. Here we clear it with a
-                            // blue color.
-                            //
-                            // Only attachments that have `LoadOp::Clear` are provided with
-                            // clear values, any others should use `None` as the clear value.
-                            clear_value: Some([0.0, 0.0, 1.0, 1.0].into()),
-                            ..RenderingAttachmentInfo::image_view(
-                                // We specify image view corresponding to the currently acquired
-                                // swapchain image, to use for this attachment.
-                                attachment_image_views[image_index as usize].clone(),
-                            )
-                        })],
-                        ..Default::default()
-                    })
-                    .unwrap()
-                    // We are now inside the first subpass of the render pass. We add a draw command.
-                    //
-                    // The last two parameters contain the list of resources to pass to the shaders.
-                    // Since we used an `EmptyPipeline` object, the objects have to be `()`.
-                    .set_viewport(0, [viewport.clone()])
-                    .bind_pipeline_graphics(pipeline.clone())
-                    .bind_vertex_buffers(0, vertex_buffer.clone())
-                    .draw(vertex_buffer.len() as u32, 1, 0, 0)
-                    .unwrap()
-                    // We leave the render pass.
-                    .end_rendering()
-                    .unwrap();
+    surface.configure(
+        &device,
+        &wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format,
+            width: physical_size.width,
+            height: physical_size.height,
+            present_mode: wgpu::PresentMode::AutoVsync,
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+        },
+    );
 
-                // Finish building the command buffer by calling `build`.
-                let command_buffer = builder.build().unwrap();
+    let mut resized = false;
 
-                let future = previous_frame_end
-                    .take()
-                    .unwrap()
-                    .join(acquire_future)
-                    .then_execute(queue.clone(), command_buffer)
-                    .unwrap()
-                    // The color output is now expected to contain our triangle. But in order to show it on
-                    // the screen, we have to *present* the image by calling `present`.
-                    //
-                    // This function does not actually present the image immediately. Instead it submits a
-                    // present command at the end of the queue. This means that it will only be presented once
-                    // the GPU has finished executing the command buffer that draws the triangle.
-                    .then_swapchain_present(
-                        queue.clone(),
-                        SwapchainPresentInfo::swapchain_image_index(output.swapchain.clone(), image_index),
-                    )
-                    .then_signal_fence_and_flush();
+    // Initialize staging belt
+    let mut staging_belt = wgpu::util::StagingBelt::new(5 * 1024);
 
-                match future {
-                    Ok(future) => {
-                        previous_frame_end = Some(future.boxed());
+    // Initialize scene and GUI controls
+    let scene = Scene::new(&device, format);
+    let controls = Controls::new();
+
+    // Initialize iced
+    let mut debug = Debug::new();
+    let mut renderer =
+        Renderer::new(Backend::new(&device, Settings::default(), format));
+
+    let mut state = program::State::new(
+        controls,
+        viewport.logical_size(),
+        &mut renderer,
+        &mut debug,
+    );
+
+    // Run event loop
+    event_loop.run(move |event, _, control_flow| {
+        // You should change this if you want to render continuosly
+        *control_flow = ControlFlow::Wait;
+
+        match event {
+            Event::WindowEvent { event, .. } => {
+                match event {
+                    WindowEvent::CursorMoved { position, .. } => {
+                        cursor_position = position;
                     }
-                    Err(FlushError::OutOfDate) => {
-                        recreate_swapchain = true;
-                        previous_frame_end = Some(sync::now(device.device.clone()).boxed());
+                    WindowEvent::ModifiersChanged(new_modifiers) => {
+                        modifiers = new_modifiers;
                     }
-                    Err(e) => {
-                        println!("Failed to flush future: {:?}", e);
-                        previous_frame_end = Some(sync::now(device.device.clone()).boxed());
+                    WindowEvent::Resized(_) => {
+                        resized = true;
                     }
+                    WindowEvent::CloseRequested => {
+                        *control_flow = ControlFlow::Exit;
+                    }
+                    _ => {}
+                }
+
+                // Map window event to iced event
+                if let Some(event) = iced_winit::conversion::window_event(
+                    &event,
+                    window.scale_factor(),
+                    modifiers,
+                ) {
+                    state.queue_event(event);
                 }
             }
-            _ => (),
+            Event::MainEventsCleared => {
+                // If there are events pending
+                if !state.is_queue_empty() {
+                    // We update iced
+                    let _ = state.update(
+                        viewport.logical_size(),
+                        conversion::cursor_position(
+                            cursor_position,
+                            viewport.scale_factor(),
+                        ),
+                        &mut renderer,
+                        &iced_wgpu::Theme::Dark,
+                        &renderer::Style { text_color: Color::WHITE },
+                        &mut clipboard,
+                        &mut debug,
+                    );
+
+                    // and request a redraw
+                    window.request_redraw();
+                }
+            }
+            Event::RedrawRequested(_) => {
+                if resized {
+                    let size = window.inner_size();
+
+                    viewport = Viewport::with_physical_size(
+                        Size::new(size.width, size.height),
+                        window.scale_factor(),
+                    );
+
+                    surface.configure(
+                        &device,
+                        &wgpu::SurfaceConfiguration {
+                            format,
+                            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                            width: size.width,
+                            height: size.height,
+                            present_mode: wgpu::PresentMode::AutoVsync,
+                            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                        },
+                    );
+
+                    resized = false;
+                }
+
+                match surface.get_current_texture() {
+                    Ok(frame) => {
+                        let mut encoder = device.create_command_encoder(
+                            &wgpu::CommandEncoderDescriptor { label: None },
+                        );
+
+                        let program = state.program();
+
+                        let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+                        {
+                            // We clear the frame
+                            let mut render_pass = scene.clear(
+                                &view,
+                                &mut encoder,
+                                program.background_color(),
+                            );
+
+                            // Draw the scene
+                            scene.draw(&mut render_pass);
+                        }
+
+                        // And then iced on top
+                        renderer.with_primitives(|backend, primitive| {
+                            backend.present(
+                                &device,
+                                &mut staging_belt,
+                                &mut encoder,
+                                &view,
+                                primitive,
+                                &viewport,
+                                &debug.overlay(),
+                            );
+                        });
+
+                        // Then we submit the work
+                        staging_belt.finish();
+                        queue.submit(Some(encoder.finish()));
+                        frame.present();
+
+                        // Update the mouse cursor
+                        window.set_cursor_icon(
+                            iced_winit::conversion::mouse_interaction(
+                                state.mouse_interaction(),
+                            ),
+                        );
+
+                        // And recall staging buffers
+                        staging_belt.recall();
+                    }
+                    Err(error) => match error {
+                        wgpu::SurfaceError::OutOfMemory => {
+                            panic!("Swapchain error: {}. Rendering cannot continue.", error)
+                        }
+                        _ => {
+                            // Try rendering again next frame.
+                            window.request_redraw();
+                        }
+                    },
+                }
+            }
+            _ => {}
         }
-    });
-}
-
-/// This method is called once during initialization, then again whenever the window is resized
-fn window_size_dependent_setup(
-    images: &[Arc<SwapchainImage>],
-    viewport: &mut Viewport,
-) -> Vec<Arc<ImageView<SwapchainImage>>> {
-    let dimensions = images[0].dimensions().width_height();
-    viewport.dimensions = [dimensions[0] as f32, dimensions[1] as f32];
-
-    images
-        .iter()
-        .map(|image| ImageView::new_default(image.clone()).unwrap())
-        .collect::<Vec<_>>()
+    })
 }
