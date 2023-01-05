@@ -8,7 +8,10 @@
 
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_KHR_portability_subset",
 };
+
+static const uint32_t _nRequiredExtensions = 2;
 
 static VkQueue
 _newDeviceQueue(VkDevice device, int queueFamilyIndex, int queueIndex)
@@ -54,7 +57,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     VkDeviceCreateInfo deviceCI = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .ppEnabledExtensionNames = _requiredExtensions,
-        .enabledExtensionCount = 1,
+        .enabledExtensionCount = _nRequiredExtensions,
         .pEnabledFeatures = &features,
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
