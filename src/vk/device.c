@@ -84,7 +84,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     return device;
 }
 
-void createRenderDevice(PhysicalDevice* arrPhysicalDevices, Device* pDevice)
+void createDevice(const PhysicalDevice* arrPhysicalDevices, Device* pDevice)
 {
     ecs_trace("Creating RenderDevice");
     ecs_log_push();
@@ -93,6 +93,12 @@ void createRenderDevice(PhysicalDevice* arrPhysicalDevices, Device* pDevice)
     // Create logical device
     pDevice->handle = _newLogicalDevice(pDevice->phys);
     ecs_log_pop();
+}
+
+void destroyDevice(Device* pDevice)
+{
+    vkDestroyDevice(pDevice->handle);
+    pDevice->handle = VK_NULL_HANDLE;
 }
 
 Queue deviceGetGraphicsQueue(const Device* device)
