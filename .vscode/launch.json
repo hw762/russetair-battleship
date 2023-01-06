@@ -16,7 +16,6 @@
             "externalConsole": false,
             "MIMode": "lldb",
             "preLaunchTask": "Meson: Build all targets",
-
         }
     ]
 }

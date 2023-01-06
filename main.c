@@ -1,6 +1,7 @@
 const char* PROJECT_NAME = MESON_PROJECT_NAME;
 const char* ENGINE_NAME = "PotatoEngine";
 
+#include <SDL2/SDL.h>
 #include <flecs.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,8 +36,21 @@ int main()
 
     createGraphicsSystem(game.ecs);
 
-    for (int i = 0; i < 1000000000; ++i) {
+    SDL_Event e;
+    bool quit = false;
+    while (!quit) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                quit = true;
+            }
+            if (e.type == SDL_KEYDOWN) {
+                quit = true;
+            }
+            if (e.type == SDL_MOUSEBUTTONDOWN) {
+                quit = true;
+            }
         }
+    }
     // spawnSector(game.ecs, 0, 0, 0, &spawnChunkDefault);
     // spawnSector(game.ecs, 0, 1, 0, &spawnChunk);
     // spawnSector(game.ecs, 1, 0, 0, NULL);
