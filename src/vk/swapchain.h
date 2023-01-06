@@ -18,6 +18,7 @@ typedef struct Swapchain {
     VkSurfaceKHR surface;
     ImageView* arrViews;
     SurfaceFormat format;
+    VkExtent2D extent;
 
     uint32_t currentFrame;
 } Swapchain;

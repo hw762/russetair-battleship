@@ -15,6 +15,7 @@ typedef struct PipelineCache {
 } PipelineCache;
 
 void createPipelineCache(const Device* pDevice, PipelineCache* pPipelineCache);
+void destroyPipelineCache(PipelineCache* pPipelineCache);
 
 typedef struct Pipeline {
     VkPipeline vkPipeline;
@@ -24,14 +25,16 @@ typedef struct Pipeline {
 
 typedef struct PipelineCreateInfo {
     const RenderPass* pRenderPass;
-    const ShaderProgram* pShaderProgram;
+    const ShaderProgram* pVertexShader;
+    const ShaderProgram* pFragmentShader;
     int colorAttachmentCount;
     int depthAttachmentCount;
     bool blend;
     uint32_t pushConstantSize;
-    const VertexInputStateInfo* pVertexInputStateInfo;
+    const VkPipelineVertexInputStateCreateInfo* pPVISCI;
     uint32_t descriptorSetLayoutCount;
     const DescriptorSetLayout* pDescriptorSetLayout;
 } PipelineCreateInfo;
 
 void createPipeline(const PipelineCreateInfo* pCreateInfo, Pipeline* pPipeline);
+void destroyPipeline(Pipeline* pPipeline);

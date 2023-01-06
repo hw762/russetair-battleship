@@ -22,3 +22,6 @@ typedef struct FramebufferCreateInfo {
     uint32_t width;
     uint32_t height;
 } FramebufferCreateInfo;
+
+void createFramebuffer(const FramebufferCreateInfo* pCreateInfo, Framebuffer* pFramebuffer);
+void destroyFramebuffer(Framebuffer* pFramebuffer);

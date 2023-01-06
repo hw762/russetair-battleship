@@ -12,4 +12,5 @@ vk_src = files(
     'framebuffer.c',
     'pipeline.c',
     'buffer.c',
+    'shader.c',
 )

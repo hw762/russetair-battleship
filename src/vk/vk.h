@@ -6,10 +6,12 @@
 #include "check.h"
 #include "command_buffer.h"
 #include "device.h"
+#include "framebuffer.h"
 #include "image.h"
 #include "instance.h"
 #include "physical_device.h"
 #include "queue.h"
+#include "render_pass.h"
 #include "swapchain.h"
 
 typedef struct VulkanSystem {

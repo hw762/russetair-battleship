@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <stb_ds.h>
 
+#include "renderer/clear_screen.h"
 #include "vk/vk.h"
 
 extern const char* PROJECT_NAME;
@@ -66,12 +67,31 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         .defaultHeight = w,
     };
     createSwapchain(&swapchainCI, &swapchain);
+
+    // Render passes
+    RenderPass rpass;
+    RenderPassCreateInfo rpassCreateInfo = {
+        .format = swapchain.format.imageFormat,
+        .pDevice = &system.renderDevice,
+    };
+    createDefaultRenderPass(&rpassCreateInfo, &rpass);
+
+    Framebuffer* arrFramebuffer = NULL;
+    arrsetlen(arrFramebuffer, arrlen(swapchain.arrViews));
+
     CommandPool pool = newCommandPool(&system.renderDevice, &presentQueue);
 
     // Pre-record clears
     for (int i = 0; i < arrlen(swapchain.arrViews); ++i) {
+        FramebufferCreateInfo fbCI = {
+            .pImageView = &swapchain.arrViews[i],
+            .pRenderPass = &rpass,
+            .width = swapchain.extent.width,
+            .height = swapchain.extent.height,
+        };
+        createFramebuffer(&fbCI, &arrFramebuffer[i]);
         CommandBuffer cmdBuf = newCommandBuffer(&pool);
-        commandBufferRecordClear(&cmdBuf, &swapchain.arrViews[i], w, h);
+        commandBufferRecordClear(&cmdBuf, &arrFramebuffer[i], &swapchain.arrViews[i], w, h);
         // Render to screen
         swapchainAcquire(&swapchain);
         // TODO: queue submit

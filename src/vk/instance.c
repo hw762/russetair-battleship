@@ -126,9 +126,6 @@ void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstan
 {
     ecs_trace("Creating VkInstance");
     ecs_log_push();
-    if (pInstance->vkInstance != VK_NULL_HANDLE) {
-        ecs_abort(1, "Instance %#p already initialized", pInstance);
-    }
     VkApplicationInfo app_info
         = {
               .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,

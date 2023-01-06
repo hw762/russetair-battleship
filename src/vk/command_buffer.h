@@ -22,5 +22,3 @@ typedef struct CommandBuffer {
 } CommandBuffer;
 
 CommandBuffer newCommandBuffer(const CommandPool* pool);
-void commandBufferRecordClear(const CommandBuffer* commandBuffer,
-    const ImageView* view, uint32_t w, uint32_t h);

@@ -227,6 +227,7 @@ void createSwapchain(const SwapchainCreateInfo* pCreateInfo, Swapchain* pSwapcha
         .arrViews = views,
         .format = format,
         .currentFrame = 0,
+        .extent = extent,
     };
 }
 

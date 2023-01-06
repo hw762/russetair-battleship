@@ -30,3 +30,13 @@ void destroyPipelineCache(PipelineCache* pPipelineCache)
     vkDestroyPipelineCache(pPipelineCache->pDevice->handle, pPipelineCache->vkPipelineCache, NULL);
     *pPipelineCache = (PipelineCache) {};
 }
+
+void createPipeline(const PipelineCreateInfo* pCreateInfo, Pipeline* pPipeline)
+{
+    ecs_trace("Creating pipeline");
+    ecs_log_push();
+
+    /// TODO
+
+    ecs_log_pop();
+}

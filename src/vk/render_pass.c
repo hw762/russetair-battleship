@@ -36,7 +36,11 @@ void createDefaultRenderPass(const RenderPassCreateInfo* pCreateInfo, RenderPass
         .pSubpasses = &subpass,
     };
     VkRenderPass vkRenderPass;
-    vkCheck(vkCreateRenderPass(pCreateInfo->pDevice->handle, &renderPassCI, NULL, &vkRenderPass))* pRenderPass = (RenderPass) {
+    vkCheck(vkCreateRenderPass(pCreateInfo->pDevice->handle, &renderPassCI, NULL, &vkRenderPass))
+    {
+        ecs_abort(1, "Failed to create render pass");
+    }
+    *pRenderPass = (RenderPass) {
         .vkRenderPass = vkRenderPass,
         .pDevice = pCreateInfo->pDevice,
     };
