@@ -3,10 +3,10 @@
 #include <vk_mem_alloc.h>
 
 typedef struct Device Device;
-typedef struct VulkanInstance VulkanInstance;
+typedef struct VulkanSystem VulkanSystem;
 
 typedef struct MemoryAllocator {
     VmaAllocator vmaAllocator;
 } MemoryAllocator;
 
-void createMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, MemoryAllocator* pAllocator);
+void createMemoryAllocator(const Device* pDev, MemoryAllocator* pAllocator);

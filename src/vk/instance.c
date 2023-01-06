@@ -122,10 +122,13 @@ VkDebugUtilsMessengerEXT newVkDebugUtilsMessengerEXT(VkInstance instance)
     return messenger;
 }
 
-VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
+void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstance)
 {
     ecs_trace("Creating VkInstance");
     ecs_log_push();
+    if (pInstance->vkInstance != VK_NULL_HANDLE) {
+        ecs_abort(1, "Instance %#p already initialized", pInstance);
+    }
     VkApplicationInfo app_info
         = {
               .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -136,7 +139,7 @@ VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
               .apiVersion = VK_API_VERSION_1_3,
           };
     // FIXME allow turning off validation
-    const char** extensions = _getRequiredExtensions(sdl_exts, n_sdl_exts);
+    const char** extensions = _getRequiredExtensions(pCreationInfo->ppExtensionNames, pCreationInfo->extensionCount);
     const char** layers = _getValidationLayers();
     VkInstanceCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -148,15 +151,13 @@ VkInstance newVkInstance(const char** sdl_exts, uint32_t n_sdl_exts)
         .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
         .pNext = &_debug_utils_messenger_create_info_ext
     };
-    VkInstance instance;
-    vkCheck(vkCreateInstance(&ci, NULL, &instance))
+    vkCheck(vkCreateInstance(&ci, NULL, &pInstance->vkInstance))
     {
         ecs_abort(1, "Failed to created Vulkan instance");
     }
     arrfree(extensions);
     arrfree(layers);
-    ecs_trace("Done creating VkInstance = %#llx", instance);
+    ecs_trace("Done creating VkInstance = %#p", pInstance->vkInstance);
     ecs_log_pop();
-    return instance;
 }
 

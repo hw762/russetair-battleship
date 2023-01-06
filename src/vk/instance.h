@@ -2,6 +2,15 @@
 
 #include <vulkan/vulkan.h>
 
-VkInstance newVkInstance(const char** extensions, uint32_t n_extensions);
+typedef struct Instance {
+    VkInstance vkInstance;
+} Instance;
+
+typedef struct InstanceCreationInfo {
+    uint32_t extensionCount;
+    const char** ppExtensionNames;
+} InstanceCreationInfo;
+
+void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstance);
 VkDebugUtilsMessengerEXT newVkDebugUtilsMessengerEXT(VkInstance instance);
 

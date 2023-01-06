@@ -46,19 +46,19 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         ecs_abort(1, "Failed to get required extensions: %s", SDL_GetError());
     }
     // ecs_entity_t system = ecs_new_w_pair(ecs, EcsIsA, VulkanSystem);
-    VulkanInstance instance = newVulkanInstance(extensions, n_extensions);
+    VulkanSystem system = newVulkanSystem(extensions, n_extensions);
     free(extensions);
 
     VkSurfaceKHR surface;
-    if (!SDL_Vulkan_CreateSurface(*pWindow, instance.instance, &surface)) {
+    if (!SDL_Vulkan_CreateSurface(*pWindow, system.instance.vkInstance, &surface)) {
         ecs_abort(1, "Failed to create Vulkan surface: %s", SDL_GetError());
     }
-    Queue presentQueue = deviceGetPresentQueue(&instance.renderDevice, surface);
+    Queue presentQueue = deviceGetPresentQueue(&system.renderDevice, surface);
     int w, h;
     SDL_Vulkan_GetDrawableSize(*pWindow, &w, &h);
     Swapchain swapchain
-        = newSwapchain(&instance.renderDevice, surface, 3, true, w, h);
-    CommandPool pool = newCommandPool(&instance.renderDevice, &presentQueue);
+        = newSwapchain(&system.renderDevice, surface, 3, true, w, h);
+    CommandPool pool = newCommandPool(&system.renderDevice, &presentQueue);
 
     // Pre-record clears
     for (int i = 0; i < arrlen(swapchain.arrViews); ++i) {
@@ -68,8 +68,8 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         swapchainAcquire(&swapchain);
         // TODO: queue submit
         const ImageView* view = swapchainCurrentView(&swapchain);
-        vkWaitForFences(instance.renderDevice.handle, 1, &view->fence, true, LONG_MAX);
-        vkResetFences(instance.renderDevice.handle, 1, &view->fence);
+        vkWaitForFences(system.renderDevice.handle, 1, &view->fence, true, LONG_MAX);
+        vkResetFences(system.renderDevice.handle, 1, &view->fence);
         queueSubmit(&presentQueue, &cmdBuf,
             view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             view->renderCompleteSemaphore, view->fence);

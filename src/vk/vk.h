@@ -12,15 +12,15 @@
 #include "queue.h"
 #include "swapchain.h"
 
-typedef struct VulkanInstance {
-    VkInstance instance;
+typedef struct VulkanSystem {
+    Instance instance;
     VkDebugUtilsMessengerEXT messenger;
     PhysicalDevice* arrPhysicalDevices;
     Device renderDevice;
-} VulkanInstance;
+} VulkanSystem;
 
-extern ECS_COMPONENT_DECLARE(VulkanInstance);
+extern ECS_COMPONENT_DECLARE(VulkanSystem);
 
 void registerVulkan(ecs_world_t* ecs);
 
-VulkanInstance newVulkanInstance(const char** exts, uint32_t n_exts);
+VulkanSystem newVulkanSystem(const char** exts, uint32_t n_exts);

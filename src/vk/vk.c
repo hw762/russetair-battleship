@@ -10,25 +10,27 @@
 #include "pipeline.h"
 #include "swapchain.h"
 
-ECS_COMPONENT_DECLARE(VulkanInstance);
+ECS_COMPONENT_DECLARE(VulkanSystem);
 
 void registerVulkan(ecs_world_t* ecs)
 {
-    ECS_COMPONENT_DEFINE(ecs, VulkanInstance);
+    ECS_COMPONENT_DEFINE(ecs, VulkanSystem);
 }
 
-VulkanInstance newVulkanInstance(const char** exts, uint32_t n_exts)
+VulkanSystem newVulkanSystem(const char** exts, uint32_t n_exts)
 {
     ecs_trace("Creating Vulkan Instance");
     ecs_log_push();
     // Create VkInstance, adding compatibility extension
-    VkInstance instance = newVkInstance(exts, n_exts);
+    Instance instance;
+    InstanceCreationInfo instanceCI = { .extensionCount = n_exts, .ppExtensionNames = exts };
+    createInstance(&instanceCI, &instance);
     // Setup messenger
-    VkDebugUtilsMessengerEXT messenger = newVkDebugUtilsMessengerEXT(instance);
-    PhysicalDevice* phys = getPhysicalDevices(instance);
+    VkDebugUtilsMessengerEXT messenger = newVkDebugUtilsMessengerEXT(instance.vkInstance);
+    PhysicalDevice* phys = getPhysicalDevices(&instance);
     Device device = newRenderDevice(phys);
     ecs_log_pop();
-    return (VulkanInstance) {
+    return (VulkanSystem) {
         .instance = instance,
         .messenger = messenger,
         .arrPhysicalDevices = phys,

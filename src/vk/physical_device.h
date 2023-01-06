@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <vulkan/vulkan.h>
 
+typedef struct Instance Instance;
+
 typedef struct PhysicalDevice {
     VkPhysicalDevice handle;
     VkPhysicalDeviceProperties props;
@@ -10,9 +12,11 @@ typedef struct PhysicalDevice {
     const VkQueueFamilyProperties* arrQueueFamilyProps;
     VkPhysicalDeviceFeatures features;
     VkPhysicalDeviceMemoryProperties memProps;
+    //
+    const Instance* pInstance;
 } PhysicalDevice;
 
-PhysicalDevice* getPhysicalDevices(VkInstance instance);
+PhysicalDevice* getPhysicalDevices(const Instance* pInstance);
 
 const char*
 physicalDeviceType(const PhysicalDevice* phys);

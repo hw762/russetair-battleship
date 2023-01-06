@@ -126,11 +126,11 @@ PhysicalDevice* selectPhysicalDevice(PhysicalDevice* arrPhysicalDevices)
 
 ////// The constructor
 
-PhysicalDevice* getPhysicalDevices(VkInstance instance)
+PhysicalDevice* getPhysicalDevices(const Instance* pInstance)
 {
     ecs_trace("Spawning VkPhysicalDevice entities");
     ecs_log_push();
-
+    VkInstance instance = pInstance->vkInstance;
     PhysicalDevice* physicalDevices = NULL;
     VkPhysicalDevice* phys = _getPhysicalDevices(instance);
     arrsetlen(physicalDevices, arrlen(phys));
@@ -143,6 +143,7 @@ PhysicalDevice* getPhysicalDevices(VkInstance instance)
             .arrQueueFamilyProps = _getPhysicalDeviceQueueFamiliyProperties(d),
             .features = _getPhysicalDeviceFeatures(d),
             .memProps = _getPhysicalDeviceMemoryProperties(d),
+            .pInstance = pInstance,
         };
     }
     arrfree(phys);

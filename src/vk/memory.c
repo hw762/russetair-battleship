@@ -11,12 +11,12 @@
 #include "physical_device.h"
 #include "vk.h"
 
-void createMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, MemoryAllocator* pAllocator)
+void createMemoryAllocator(const Device* pDev, MemoryAllocator* pAllocator)
 {
     VmaAllocatorCreateInfo ci = {
-        .instance = pInstance->instance,
-        .device = pDev->handle,
+        .instance = pDev->phys->pInstance->vkInstance,
         .physicalDevice = pDev->phys->handle,
+        .device = pDev->handle,
     };
     vkCheck(vmaCreateAllocator(&ci, &pAllocator->vmaAllocator))
     {
