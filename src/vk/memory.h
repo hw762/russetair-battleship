@@ -9,4 +9,4 @@ typedef struct MemoryAllocator {
     VmaAllocator vmaAllocator;
 } MemoryAllocator;
 
-void newMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, MemoryAllocator* pAllocator);
+void createMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, MemoryAllocator* pAllocator);

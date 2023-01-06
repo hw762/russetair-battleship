@@ -11,7 +11,7 @@
 #include "physical_device.h"
 #include "vk.h"
 
-void newMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, MemoryAllocator* pAllocator)
+void createMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, MemoryAllocator* pAllocator)
 {
     VmaAllocatorCreateInfo ci = {
         .instance = pInstance->instance,
@@ -22,4 +22,10 @@ void newMemoryAllocator(const VulkanInstance* pInstance, const Device* pDev, Mem
     {
         ecs_abort(1, "Failed to create VMA allocator");
     }
+}
+
+void destroyMemoryAllocator(MemoryAllocator* pAllocator)
+{
+    vmaDestroyAllocator(pAllocator->vmaAllocator);
+    pAllocator->vmaAllocator = VK_NULL_HANDLE;
 }
