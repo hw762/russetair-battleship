@@ -7,7 +7,6 @@
 #include "device.h"
 #include "instance.h"
 #include "physical_device.h"
-#include "pipeline.h"
 #include "swapchain.h"
 
 ECS_COMPONENT_DECLARE(VulkanSystem);

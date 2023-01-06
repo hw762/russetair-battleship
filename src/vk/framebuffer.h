@@ -4,6 +4,7 @@
 
 typedef struct RenderPass RenderPass;
 typedef struct ImageView ImageView;
+typedef struct Device Device;
 
 typedef struct Framebuffer {
     VkFramebuffer vkFramebuffer;

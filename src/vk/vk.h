@@ -9,7 +9,6 @@
 #include "image.h"
 #include "instance.h"
 #include "physical_device.h"
-#include "pipeline.h"
 #include "queue.h"
 #include "swapchain.h"
 
