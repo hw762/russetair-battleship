@@ -9,16 +9,18 @@
 #ifdef __APPLE__
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
     "VK_KHR_portability_subset",
 };
 
-static const uint32_t _nRequiredExtensions = 2;
+static const uint32_t _nRequiredExtensions = 3;
 #else
 static const char* _requiredExtensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 };
 
-static const uint32_t _nRequiredExtensions = 1;
+static const uint32_t _nRequiredExtensions = 2;
 #endif
 
 static VkQueue
