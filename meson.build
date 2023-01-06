@@ -1,6 +1,6 @@
-project('russetair-battleship', 'c',
+project('russetair-battleship', 'c', 'cpp',
   version : '0.1',
-  default_options : ['warning_level=3', 'c_std=gnu17'])
+  default_options : ['warning_level=3', 'c_std=gnu17', 'cpp_std=c++17'])
 
 cc = meson.get_compiler('c')
 
@@ -10,6 +10,7 @@ add_global_arguments([
   '-Werror=return-type',
   '-Wno-missing-field-initializers',
   '-Wno-newline-eof',
+  '-Wno-nullability-extension'
   ], language: 'c')
 
 add_global_arguments([
@@ -43,12 +44,14 @@ flecs_dep = flecs_subproject.get_variable('flecs_dep')
 thirdparty_src = files(
   'thirdparty/stb/stb.c',
   'thirdparty/nuklear/nuklear.c',
+  'thirdparty/vma/vk_mem_alloc.cpp',
 )
 
 src_inc = include_directories('src')
 thirdparty_inc = include_directories([
   'thirdparty/stb',
   'thirdparty/nuklear',
+  'thirdparty/vma'
 ])
 
 exe = executable('c_battleship', [

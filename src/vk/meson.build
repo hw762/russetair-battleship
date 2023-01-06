@@ -7,4 +7,6 @@ vk_src = files(
     'pipeline.c',
     'queue.c',
     'command_buffer.c',
+    'image.c',
+    'memory.c'
 )

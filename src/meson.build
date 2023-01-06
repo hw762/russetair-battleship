@@ -6,4 +6,5 @@ src = files(
     'chunk.c',
     'sector.c',
     'graphics.c',
+    'gui.c',
 ) + vk_src
