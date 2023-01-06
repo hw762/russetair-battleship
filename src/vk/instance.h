@@ -12,5 +12,7 @@ typedef struct InstanceCreationInfo {
 } InstanceCreationInfo;
 
 void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstance);
+void destroyInstance(Instance* pInstance);
+
 VkDebugUtilsMessengerEXT newVkDebugUtilsMessengerEXT(VkInstance instance);
 

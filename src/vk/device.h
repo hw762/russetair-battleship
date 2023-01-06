@@ -15,7 +15,7 @@ typedef struct Device {
     const PhysicalDevice* phys;
 } Device;
 
-Device newRenderDevice(PhysicalDevice* arrPhysicalDevices);
+void createRenderDevice(PhysicalDevice* arrPhysicalDevices, Device* pDevice);
 
 Queue deviceGetGraphicsQueue(const Device* device);
 Queue deviceGetPresentQueue(const Device* device, VkSurfaceKHR surface);

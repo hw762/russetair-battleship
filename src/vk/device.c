@@ -84,19 +84,15 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     return device;
 }
 
-Device newRenderDevice(PhysicalDevice* arrPhysicalDevices)
+void createRenderDevice(PhysicalDevice* arrPhysicalDevices, Device* pDevice)
 {
     ecs_trace("Creating RenderDevice");
     ecs_log_push();
     // Choose the best one
-    PhysicalDevice* physDev = selectPhysicalDevice(arrPhysicalDevices);
+    pDevice->phys = selectPhysicalDevice(arrPhysicalDevices);
     // Create logical device
-    VkDevice device = _newLogicalDevice(physDev);
+    pDevice->handle = _newLogicalDevice(pDevice->phys);
     ecs_log_pop();
-    return (Device) {
-        .handle = device,
-        .phys = physDev,
-    };
 }
 
 Queue deviceGetGraphicsQueue(const Device* device)

@@ -161,3 +161,8 @@ void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstan
     ecs_log_pop();
 }
 
+void destroyInstance(Instance* pInstance)
+{
+    vkDestroyInstance(pInstance->vkInstance, NULL);
+    pInstance->vkInstance = VK_NULL_HANDLE;
+}
