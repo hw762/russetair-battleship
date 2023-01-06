@@ -11,6 +11,7 @@ typedef struct Queue Queue;
 
 typedef struct Device {
     VkDevice handle;
+    MemoryAllocator allocator;
     //
     const PhysicalDevice* phys;
 } Device;

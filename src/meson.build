@@ -1,4 +1,5 @@
 subdir('vk')
+subdir('renderer')
 
 src = files(
     'spatial.c',   
@@ -7,4 +8,4 @@ src = files(
     'sector.c',
     'graphics.c',
     'gui.c',
-) + vk_src
+) + vk_src + renderer_src

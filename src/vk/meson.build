@@ -10,4 +10,6 @@ vk_src = files(
     'memory.c',
     'render_pass.c',
     'framebuffer.c',
+    'pipeline.c',
+    'buffer.c',
 )
