@@ -10,4 +10,5 @@ vk_src = files(
     'image.c',
     'memory.c',
     'render_pass.c',
+    'framebuffer.c',
 )
