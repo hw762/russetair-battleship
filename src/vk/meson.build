@@ -8,5 +8,6 @@ vk_src = files(
     'queue.c',
     'command_buffer.c',
     'image.c',
-    'memory.c'
+    'memory.c',
+    'render_pass.c',
 )
