@@ -10,13 +10,7 @@ typedef struct SurfaceFormat {
     int colorSpace;
 } SurfaceFormat;
 
-typedef struct ImageView {
-    VkImageView handle;
-    VkImage image;
-    VkFence fence;
-    VkSemaphore acquisitionSemaphore;
-    VkSemaphore renderCompleteSemaphore;
-} ImageView;
+typedef struct ImageView ImageView;
 
 typedef struct Swapchain {
     VkSwapchainKHR handle;
@@ -28,9 +22,17 @@ typedef struct Swapchain {
     uint32_t currentFrame;
 } Swapchain;
 
-Swapchain
-newSwapchain(const Device* renderDevice, VkSurfaceKHR surface,
-    int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight);
+typedef struct SwapchainCreateInfo {
+    const Device* pDevice;
+    VkSurfaceKHR surface;
+    int requestedImages;
+    bool vSync;
+    uint32_t defaultWidth;
+    uint32_t defaultHeight;
+} SwapchainCreateInfo;
+
+void createSwapchain(const SwapchainCreateInfo* pCreateInfo, Swapchain* pSwapchain);
+void destroySwapchain(Swapchain* pSwapchain);
 
 bool swapchainAcquire(Swapchain* swapchain);
 const ImageView* swapchainCurrentView(const Swapchain* swapchain);

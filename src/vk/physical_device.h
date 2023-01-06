@@ -23,6 +23,6 @@ physicalDeviceType(const PhysicalDevice* phys);
 
 bool hasKHRSwapchainExt(const PhysicalDevice* phys);
 bool hasGraphicsQueueFamily(const PhysicalDevice* phys);
-PhysicalDevice* selectPhysicalDevice(PhysicalDevice* arrPhysicalDevices);
+const PhysicalDevice* selectPhysicalDevice(const PhysicalDevice* arrPhysicalDevices);
 int getGraphicsQueueFamilyIndex(const PhysicalDevice* phys);
 int getPresentQueueFamilyIndex(const PhysicalDevice* phys, VkSurfaceKHR surface);

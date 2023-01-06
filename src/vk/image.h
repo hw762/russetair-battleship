@@ -23,3 +23,11 @@ typedef struct Image {
 } Image;
 
 Image newImage(const Device* pDevice, const ImageInfo* pInfo, const void* pData, VkDeviceSize size);
+
+typedef struct ImageView {
+    VkImageView handle;
+    VkImage image;
+    VkFence fence;
+    VkSemaphore acquisitionSemaphore;
+    VkSemaphore renderCompleteSemaphore;
+} ImageView;

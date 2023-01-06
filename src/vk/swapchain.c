@@ -1,5 +1,6 @@
 #include "swapchain.h"
 #include "device.h"
+#include "image.h"
 #include "physical_device.h"
 #include "vk.h"
 
@@ -176,24 +177,23 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
     return views;
 }
 
-Swapchain
-newSwapchain(const Device* renderDevice, VkSurfaceKHR surface,
-    int requestedImages, bool vsync, uint32_t defaultWidth, uint32_t defaultHeight)
+void createSwapchain(const SwapchainCreateInfo* pCreateInfo, Swapchain* pSwapchain)
 {
+    const Device* renderDevice = pCreateInfo->pDevice;
     const PhysicalDevice* physDev = renderDevice->phys;
     VkPhysicalDevice vkPhysDev = physDev->handle;
     VkDevice device = renderDevice->handle;
     ecs_trace("Creating Swapchain on device [%#p]", device);
     ecs_log_push();
 
-    VkSurfaceCapabilitiesKHR capabilities = _getSurfaceCapabilitiesKHR(vkPhysDev, surface);
-    int numImages = _calcNumImages(capabilities, requestedImages);
-    SurfaceFormat format = _calcSurfaceFormat(vkPhysDev, surface);
-    VkExtent2D extent = _calcSwapchainExtent(capabilities, defaultWidth, defaultHeight);
+    VkSurfaceCapabilitiesKHR capabilities = _getSurfaceCapabilitiesKHR(vkPhysDev, pCreateInfo->surface);
+    int numImages = _calcNumImages(capabilities, pCreateInfo->requestedImages);
+    SurfaceFormat format = _calcSurfaceFormat(vkPhysDev, pCreateInfo->surface);
+    VkExtent2D extent = _calcSwapchainExtent(capabilities, pCreateInfo->defaultWidth, pCreateInfo->defaultHeight);
 
     VkSwapchainCreateInfoKHR ci = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = surface,
+        .surface = pCreateInfo->surface,
         .minImageCount = numImages,
         .imageFormat = format.imageFormat,
         .imageColorSpace = format.colorSpace,
@@ -205,7 +205,7 @@ newSwapchain(const Device* renderDevice, VkSurfaceKHR surface,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .clipped = true,
     };
-    if (vsync) {
+    if (pCreateInfo->vSync) {
         ci.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     } else {
         ci.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
@@ -220,10 +220,10 @@ newSwapchain(const Device* renderDevice, VkSurfaceKHR surface,
     ImageView* views = _newImageViews(device, swapchain, format.imageFormat);
 
     ecs_log_pop();
-    return (Swapchain) {
+    *pSwapchain = (Swapchain) {
         .handle = swapchain,
         .device = renderDevice,
-        .surface = surface,
+        .surface = pCreateInfo->surface,
         .arrViews = views,
         .format = format,
         .currentFrame = 0,

@@ -97,7 +97,7 @@ void createDevice(const PhysicalDevice* arrPhysicalDevices, Device* pDevice)
 
 void destroyDevice(Device* pDevice)
 {
-    vkDestroyDevice(pDevice->handle);
+    vkDestroyDevice(pDevice->handle, NULL);
     pDevice->handle = VK_NULL_HANDLE;
 }
 

@@ -56,8 +56,16 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     Queue presentQueue = deviceGetPresentQueue(&system.renderDevice, surface);
     int w, h;
     SDL_Vulkan_GetDrawableSize(*pWindow, &w, &h);
-    Swapchain swapchain
-        = newSwapchain(&system.renderDevice, surface, 3, true, w, h);
+    Swapchain swapchain;
+    SwapchainCreateInfo swapchainCI = {
+        .pDevice = &system.renderDevice,
+        .surface = surface,
+        .requestedImages = 3,
+        .vSync = true,
+        .defaultWidth = w,
+        .defaultHeight = w,
+    };
+    createSwapchain(&swapchainCI, &swapchain);
     CommandPool pool = newCommandPool(&system.renderDevice, &presentQueue);
 
     // Pre-record clears

@@ -6,6 +6,7 @@
 #include "check.h"
 #include "command_buffer.h"
 #include "device.h"
+#include "image.h"
 #include "instance.h"
 #include "physical_device.h"
 #include "pipeline.h"

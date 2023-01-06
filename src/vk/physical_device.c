@@ -105,13 +105,13 @@ bool hasGraphicsQueueFamily(const PhysicalDevice* phys)
     return false;
 }
 
-PhysicalDevice* selectPhysicalDevice(PhysicalDevice* arrPhysicalDevices)
+const PhysicalDevice* selectPhysicalDevice(const PhysicalDevice* arrPhysicalDevices)
 {
-    PhysicalDevice* selected = NULL;
+    const PhysicalDevice* selected = NULL;
     ecs_trace("Selecting first appropriate device");
     ecs_log_push();
     for (int i = 0; i < arrlen(arrPhysicalDevices); ++i) {
-        PhysicalDevice* phys = &arrPhysicalDevices[i];
+        const PhysicalDevice* phys = &arrPhysicalDevices[i];
         if (hasKHRSwapchainExt(phys) && hasGraphicsQueueFamily(phys)) {
             ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", phys->handle, phys->props.deviceName);
             selected = phys;
