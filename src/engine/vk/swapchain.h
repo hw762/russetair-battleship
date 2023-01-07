@@ -4,10 +4,11 @@
 #include <vulkan/vulkan.h>
 
 #include "device.h"
+#include "vulkan/vulkan_core.h"
 
 typedef struct SurfaceFormat {
-    int imageFormat;
-    int colorSpace;
+    VkFormat imageFormat;
+    VkColorSpaceKHR colorSpace;
 } SurfaceFormat;
 
 typedef struct ImageView ImageView;

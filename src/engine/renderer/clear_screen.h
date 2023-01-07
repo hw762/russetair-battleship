@@ -17,7 +17,9 @@ typedef struct ClearScreenRendererRecordInfo {
     VkCommandBuffer commandBuffer;
     VkFramebuffer framebuffer;
     VkRenderPass renderPass;
-    VkExtent2D extent;
+    VkImageView view;
+    uint32_t width;
+    uint32_t height;
 } ClearScreenRendererRecordInfo;
 
 void clearScreenRendererRecord(

@@ -5,6 +5,7 @@
 #include <stb_ds.h>
 
 #include "physical_device.h"
+#include "vulkan/vulkan_core.h"
 
 #ifdef __APPLE__
 static const char* _requiredExtensions[] = {
@@ -39,7 +40,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     ecs_log_push();
     ecs_trace("Selected physical device %#p", phys);
     VkPhysicalDevice vkPhysicalDevice = phys->vkPhysicalDevice;
-    VkPhysicalDeviceFeatures features = { 0 };
+    VkPhysicalDeviceFeatures features = {};
     const VkQueueFamilyProperties* queueProps
         = phys->arrQueueFamilyProps;
 
@@ -64,6 +65,11 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
         .dynamicRendering = VK_TRUE,
     };
+    VkPhysicalDeviceImagelessFramebufferFeatures imageless = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES,
+        .imagelessFramebuffer = VK_TRUE,
+        .pNext = &dynamic,
+    };
     VkDeviceCreateInfo deviceCI = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .ppEnabledExtensionNames = _requiredExtensions,
@@ -71,7 +77,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
         .pEnabledFeatures = &features,
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
-        .pNext = &dynamic,
+        .pNext = &imageless,
     };
     VkDevice device;
     vkCheck(vkCreateDevice(vkPhysicalDevice, &deviceCI, NULL, &device))

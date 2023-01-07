@@ -6,6 +6,7 @@
 
 #include "engine/vk/vk.h"
 #include "renderer.h"
+#include "vulkan/vulkan_core.h"
 
 struct ClearScreenRenderer_T {
     VkClearColorValue clearColor;
@@ -36,6 +37,12 @@ void clearScreenRendererRecord(
 {
     ecs_trace("Recording command buffer...");
     ecs_log_push();
+    VkRenderPassAttachmentBeginInfo attachmentBI = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &pInfo->view,
+    };
+
     VkCommandBufferBeginInfo beginInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -46,11 +53,12 @@ void clearScreenRendererRecord(
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = pInfo->renderPass,
         .renderArea = { .extent = {
-                            .width = pInfo->extent.width,
-                            .height = pInfo->extent.height } },
+                            .width = pInfo->width,
+                            .height = pInfo->height } },
         .framebuffer = pInfo->framebuffer,
         .clearValueCount = 1,
         .pClearValues = &clearValue,
+        .pNext = &attachmentBI,
     };
     vkCheck(vkBeginCommandBuffer(pInfo->commandBuffer, &beginInfo))
     {

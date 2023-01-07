@@ -105,6 +105,7 @@ bool hasGraphicsQueueFamily(const PhysicalDevice* phys)
     return false;
 }
 
+/// FIXME: Need imageless framebuffer AND dynamic rendering
 const PhysicalDevice* selectPhysicalDevice(const PhysicalDevice* arrPhysicalDevices)
 {
     const PhysicalDevice* selected = NULL;
