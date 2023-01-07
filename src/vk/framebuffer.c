@@ -20,7 +20,7 @@ void createFramebuffer(const FramebufferCreateInfo* pCreateInfo, Framebuffer* pF
         .layers = 1,
     };
     VkFramebuffer fb;
-    vkCheck(vkCreateFramebuffer(pCreateInfo->pRenderPass->pDevice->handle, &ci, NULL, &fb))
+    vkCheck(vkCreateFramebuffer(pCreateInfo->pRenderPass->pDevice->vkDevice, &ci, NULL, &fb))
     {
         ecs_abort(1, "Failed to create VkFramebuffer");
     }
@@ -36,6 +36,6 @@ void createFramebuffer(const FramebufferCreateInfo* pCreateInfo, Framebuffer* pF
 
 void destroyFramebuffer(Framebuffer* pFramebuffer)
 {
-    vkDestroyFramebuffer(pFramebuffer->pDevice->handle, pFramebuffer->vkFramebuffer, NULL);
+    vkDestroyFramebuffer(pFramebuffer->pDevice->vkDevice, pFramebuffer->vkFramebuffer, NULL);
     *pFramebuffer = (Framebuffer) {};
 }

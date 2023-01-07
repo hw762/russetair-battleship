@@ -19,7 +19,7 @@ newCommandPool(const Device* device, const Queue* queue)
         .queueFamilyIndex = queue->queueFamilyIndex
     };
     VkCommandPool commandPool;
-    vkCheck(vkCreateCommandPool(device->handle, &ci, NULL, &commandPool))
+    vkCheck(vkCreateCommandPool(device->vkDevice, &ci, NULL, &commandPool))
     {
         ecs_abort(1, "Failed to create command pool");
     }
@@ -45,7 +45,7 @@ newCommandBuffer(const CommandPool* pool)
     };
 
     VkCommandBuffer commandBuffer;
-    vkCheck(vkAllocateCommandBuffers(pool->device->handle, &ai, &commandBuffer))
+    vkCheck(vkAllocateCommandBuffers(pool->device->vkDevice, &ai, &commandBuffer))
     {
         ecs_abort(1, "Failed to allocate command buffer");
     }

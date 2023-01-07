@@ -113,11 +113,11 @@ const PhysicalDevice* selectPhysicalDevice(const PhysicalDevice* arrPhysicalDevi
     for (int i = 0; i < arrlen(arrPhysicalDevices); ++i) {
         const PhysicalDevice* phys = &arrPhysicalDevices[i];
         if (hasKHRSwapchainExt(phys) && hasGraphicsQueueFamily(phys)) {
-            ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", phys->handle, phys->props.deviceName);
+            ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", phys->vkPhysicalDevice, phys->props.deviceName);
             selected = phys;
             break;
         } else {
-            ecs_trace("IGNORED VkPhysicalDevice = %#p, [%s]", phys->handle, phys->props.deviceName);
+            ecs_trace("IGNORED VkPhysicalDevice = %#p, [%s]", phys->vkPhysicalDevice, phys->props.deviceName);
         }
     }
     ecs_log_pop();
@@ -137,7 +137,7 @@ PhysicalDevice* getPhysicalDevices(const Instance* pInstance)
     for (int i = 0; i < arrlen(phys); ++i) {
         VkPhysicalDevice d = phys[i];
         physicalDevices[i] = (PhysicalDevice) {
-            .handle = d,
+            .vkPhysicalDevice = d,
             .props = _getPhysicalDeviceProperties(d),
             .arrExtProps = _getPhysicalDeviceExtensionProperties(d),
             .arrQueueFamilyProps = _getPhysicalDeviceQueueFamiliyProperties(d),
@@ -153,7 +153,7 @@ PhysicalDevice* getPhysicalDevices(const Instance* pInstance)
 
 VkPhysicalDevice physicalDeviceHandle(const PhysicalDevice* phys)
 {
-    return phys->handle;
+    return phys->vkPhysicalDevice;
 }
 
 const VkPhysicalDeviceProperties* physicalDeviceProperties(const PhysicalDevice* phys)
@@ -203,7 +203,7 @@ int getPresentQueueFamilyIndex(const PhysicalDevice* phys, VkSurfaceKHR surface)
     const VkQueueFamilyProperties* qfs = phys->arrQueueFamilyProps;
     for (int i = 0; i < arrlen(qfs); ++i) {
         VkBool32 supported;
-        vkGetPhysicalDeviceSurfaceSupportKHR(phys->handle, i, surface, &supported);
+        vkGetPhysicalDeviceSurfaceSupportKHR(phys->vkPhysicalDevice, i, surface, &supported);
         if (supported) {
             ecs_trace("Found present queue family index [%d]", i);
             return i;

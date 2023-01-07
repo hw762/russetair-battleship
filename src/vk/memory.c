@@ -15,8 +15,8 @@ void createMemoryAllocator(const Device* pDev, MemoryAllocator* pAllocator)
 {
     VmaAllocatorCreateInfo ci = {
         .instance = pDev->phys->pInstance->vkInstance,
-        .physicalDevice = pDev->phys->handle,
-        .device = pDev->handle,
+        .physicalDevice = pDev->phys->vkPhysicalDevice,
+        .device = pDev->vkDevice,
     };
     vkCheck(vmaCreateAllocator(&ci, &pAllocator->vmaAllocator))
     {

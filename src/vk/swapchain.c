@@ -181,8 +181,8 @@ void createSwapchain(const SwapchainCreateInfo* pCreateInfo, Swapchain* pSwapcha
 {
     const Device* renderDevice = pCreateInfo->pDevice;
     const PhysicalDevice* physDev = renderDevice->phys;
-    VkPhysicalDevice vkPhysDev = physDev->handle;
-    VkDevice device = renderDevice->handle;
+    VkPhysicalDevice vkPhysDev = physDev->vkPhysicalDevice;
+    VkDevice device = renderDevice->vkDevice;
     ecs_trace("Creating Swapchain on device [%#p]", device);
     ecs_log_push();
 
@@ -240,7 +240,7 @@ bool swapchainAcquire(Swapchain* swapchain)
 {
     bool resize = false;
     const ImageView* view = swapchainCurrentView(swapchain);
-    switch (vkAcquireNextImageKHR(swapchain->device->handle, swapchain->handle, -0L,
+    switch (vkAcquireNextImageKHR(swapchain->device->vkDevice, swapchain->handle, -0L,
         view->acquisitionSemaphore, NULL, &swapchain->currentFrame)) {
     case VK_ERROR_OUT_OF_DATE_KHR:
         resize = true;

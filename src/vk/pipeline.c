@@ -14,7 +14,7 @@ void createPipelineCache(const Device* pDevice, PipelineCache* pPipelineCache)
         .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
     };
     VkPipelineCache c;
-    vkCheck(vkCreatePipelineCache(pDevice->handle, &ci, NULL, &c))
+    vkCheck(vkCreatePipelineCache(pDevice->vkDevice, &ci, NULL, &c))
     {
         ecs_abort(1, "Failed to create VkPipelineCache");
     }
@@ -27,7 +27,7 @@ void createPipelineCache(const Device* pDevice, PipelineCache* pPipelineCache)
 
 void destroyPipelineCache(PipelineCache* pPipelineCache)
 {
-    vkDestroyPipelineCache(pPipelineCache->pDevice->handle, pPipelineCache->vkPipelineCache, NULL);
+    vkDestroyPipelineCache(pPipelineCache->pDevice->vkDevice, pPipelineCache->vkPipelineCache, NULL);
     *pPipelineCache = (PipelineCache) {};
 }
 

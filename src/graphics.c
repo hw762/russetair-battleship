@@ -96,8 +96,8 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         swapchainAcquire(&swapchain);
         // TODO: queue submit
         const ImageView* view = swapchainCurrentView(&swapchain);
-        vkWaitForFences(system.renderDevice.handle, 1, &view->fence, true, LONG_MAX);
-        vkResetFences(system.renderDevice.handle, 1, &view->fence);
+        vkWaitForFences(system.renderDevice.vkDevice, 1, &view->fence, true, LONG_MAX);
+        vkResetFences(system.renderDevice.vkDevice, 1, &view->fence);
         queueSubmit(&presentQueue, &cmdBuf,
             view->acquisitionSemaphore, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             view->renderCompleteSemaphore, view->fence);

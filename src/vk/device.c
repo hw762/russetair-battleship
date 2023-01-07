@@ -38,7 +38,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     ecs_trace("Creating logical device");
     ecs_log_push();
     ecs_trace("Selected physical device %#p", phys);
-    VkPhysicalDevice vkPhysicalDevice = phys->handle;
+    VkPhysicalDevice vkPhysicalDevice = phys->vkPhysicalDevice;
     VkPhysicalDeviceFeatures features = { 0 };
     const VkQueueFamilyProperties* queueProps
         = phys->arrQueueFamilyProps;
@@ -91,14 +91,14 @@ void createDevice(const PhysicalDevice* arrPhysicalDevices, Device* pDevice)
     // Choose the best one
     pDevice->phys = selectPhysicalDevice(arrPhysicalDevices);
     // Create logical device
-    pDevice->handle = _newLogicalDevice(pDevice->phys);
+    pDevice->vkDevice = _newLogicalDevice(pDevice->phys);
     ecs_log_pop();
 }
 
 void destroyDevice(Device* pDevice)
 {
-    vkDestroyDevice(pDevice->handle, NULL);
-    pDevice->handle = VK_NULL_HANDLE;
+    vkDestroyDevice(pDevice->vkDevice, NULL);
+    pDevice->vkDevice = VK_NULL_HANDLE;
 }
 
 Queue deviceGetGraphicsQueue(const Device* device)
@@ -106,8 +106,8 @@ Queue deviceGetGraphicsQueue(const Device* device)
     ecs_trace("Creating graphics queue");
     ecs_log_push();
     int index = getGraphicsQueueFamilyIndex(device->phys);
-    VkQueue q = _newDeviceQueue(device->handle, index, 0);
-    ecs_trace("Done creating graphics queue VkQueue = %#p on VkDevice = %#p", q, device->handle);
+    VkQueue q = _newDeviceQueue(device->vkDevice, index, 0);
+    ecs_trace("Done creating graphics queue VkQueue = %#p on VkDevice = %#p", q, device->vkDevice);
     ecs_log_pop();
     return (Queue) {
         .handle = q,
@@ -121,8 +121,8 @@ Queue deviceGetPresentQueue(const Device* device, VkSurfaceKHR surface)
     ecs_trace("Creating present queue");
     ecs_log_push();
     int index = getPresentQueueFamilyIndex(device->phys, surface);
-    VkQueue q = _newDeviceQueue(device->handle, index, 0);
-    ecs_trace("Done creating present queue VkQueue = %#p on VkDevice = %#p", q, device->handle);
+    VkQueue q = _newDeviceQueue(device->vkDevice, index, 0);
+    ecs_trace("Done creating present queue VkQueue = %#p on VkDevice = %#p", q, device->vkDevice);
     ecs_log_pop();
     return (Queue) {
         .handle = q,

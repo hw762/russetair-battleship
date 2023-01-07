@@ -6,7 +6,7 @@
 typedef struct Instance Instance;
 
 typedef struct PhysicalDevice {
-    VkPhysicalDevice handle;
+    VkPhysicalDevice vkPhysicalDevice;
     VkPhysicalDeviceProperties props;
     const VkExtensionProperties* arrExtProps;
     const VkQueueFamilyProperties* arrQueueFamilyProps;
