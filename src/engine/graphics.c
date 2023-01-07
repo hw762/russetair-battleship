@@ -71,48 +71,15 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
     };
     createSwapchain(&swapchainCI, &swapchain);
 
-    // Render passes
-    RenderPass rpass;
-    RenderPassCreateInfo rpassCreateInfo = {
-        .format = swapchain.format.imageFormat,
-        .pDevice = &system.renderDevice,
-    };
-    createDefaultRenderPass(&rpassCreateInfo, &rpass);
-
-    VkFramebuffer framebuffer;
-    VkFramebufferAttachmentImageInfo fbAII = {
-        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO,
-        .width = w,
-        .height = h,
-        .layerCount = 1,
-        .viewFormatCount = 1,
-        .pViewFormats = &swapchain.format.imageFormat,
-        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-    };
-    VkFramebufferAttachmentsCreateInfo fbACI = {
-        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO,
-        .attachmentImageInfoCount = 1,
-        .pAttachmentImageInfos = &fbAII,
-    };
-    VkFramebufferCreateInfo fbCI = {
-        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-        .renderPass = rpass.vkRenderPass,
-        .flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT,
-        .attachmentCount = 1,
-        .width = w,
-        .height = h,
-        .pNext = &fbACI,
-    };
-    vkCheck(vkCreateFramebuffer(system.renderDevice.vkDevice, &fbCI, NULL, &framebuffer))
-    {
-        ecs_abort(1, "Failed to create [VkFrameBuffer]");
-    }
-
     CommandPool pool
         = newCommandPool(&system.renderDevice, &presentQueue);
 
     ClearScreenRenderer renderer;
     ClearScreenRendererCreateInfo rendererCI = {
+        .device = system.renderDevice.vkDevice,
+        .format = swapchain.format.imageFormat,
+        .width = swapchain.extent.width,
+        .height = swapchain.extent.height,
         .clearColor = { .float32 = { 0.1, 0.2, 0.3, 1.0 } },
     };
     createClearScreenRenderer(&rendererCI, &renderer);
@@ -123,8 +90,6 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         CommandBuffer cmdBuf = newCommandBuffer(&pool);
         ClearScreenRendererRecordInfo recInfo = {
             .commandBuffer = cmdBuf.handle,
-            .framebuffer = framebuffer,
-            .renderPass = rpass.vkRenderPass,
             .view = swapchain.arrViews[i].handle,
             .width = w,
             .height = h,

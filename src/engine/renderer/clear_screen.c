@@ -9,6 +9,8 @@
 
 struct ClearScreenRenderer_T {
     VkClearColorValue clearColor;
+    VkRenderPass renderPass;
+    VkFramebuffer framebuffer;
 };
 
 void createClearScreenRenderer(const ClearScreenRendererCreateInfo* pCreateInfo, ClearScreenRenderer* pRenderer)
@@ -18,8 +20,70 @@ void createClearScreenRenderer(const ClearScreenRendererCreateInfo* pCreateInfo,
     if (p == NULL) {
         ecs_abort(1, "Failed to create ClearScreenRenderer");
     }
+
+    VkAttachmentDescription colorAttachment = {
+        .format = pCreateInfo->format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
+    VkAttachmentReference colorReference = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+    VkSubpassDescription subpass = {
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorReference,
+    };
+    VkRenderPassCreateInfo renderPassCI = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &colorAttachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+    };
+    VkRenderPass vkRenderPass;
+    vkCheck(vkCreateRenderPass(pCreateInfo->device, &renderPassCI, NULL, &vkRenderPass))
+    {
+        ecs_abort(1, "Failed to create render pass");
+    }
+    VkFramebuffer framebuffer;
+    VkFramebufferAttachmentImageInfo fbAII = {
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO,
+        .width = pCreateInfo->width,
+        .height = pCreateInfo->height,
+        .layerCount = 1,
+        .viewFormatCount = 1,
+        .pViewFormats = &pCreateInfo->format,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    };
+    VkFramebufferAttachmentsCreateInfo fbACI = {
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO,
+        .attachmentImageInfoCount = 1,
+        .pAttachmentImageInfos = &fbAII,
+    };
+    VkFramebufferCreateInfo fbCI = {
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .renderPass = vkRenderPass,
+        .flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT,
+        .attachmentCount = 1,
+        .width = pCreateInfo->width,
+        .height = pCreateInfo->height,
+        .pNext = &fbACI,
+    };
+    vkCheck(vkCreateFramebuffer(pCreateInfo->device, &fbCI, NULL, &framebuffer))
+    {
+        ecs_abort(1, "Failed to create [VkFrameBuffer]");
+    }
     *p = (struct ClearScreenRenderer_T) {
         .clearColor = pCreateInfo->clearColor,
+        .renderPass = vkRenderPass,
+        .framebuffer = framebuffer,
     };
     *pRenderer = p;
 }
@@ -50,11 +114,11 @@ void clearScreenRendererRecord(
     VkClearValue clearValue = { .color = renderer->clearColor };
     VkRenderPassBeginInfo rpassBI = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .renderPass = pInfo->renderPass,
+        .renderPass = renderer->renderPass,
         .renderArea = { .extent = {
                             .width = pInfo->width,
                             .height = pInfo->height } },
-        .framebuffer = pInfo->framebuffer,
+        .framebuffer = renderer->framebuffer,
         .clearValueCount = 1,
         .pClearValues = &clearValue,
         .pNext = &attachmentBI,
