@@ -98,7 +98,7 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         };
         createFramebuffer(&fbCI, &arrFramebuffer[i]);
         CommandBuffer cmdBuf = newCommandBuffer(&pool);
-        RendererRecordInfo recInfo = {
+        ClearScreenRendererRecordInfo recInfo = {
             .commandBuffer = cmdBuf.handle,
             .framebuffer = arrFramebuffer[i].vkFramebuffer,
             .renderPass = rpass.vkRenderPass,

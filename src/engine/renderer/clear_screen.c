@@ -32,7 +32,7 @@ void destroyClearScreenRenderer(ClearScreenRenderer renderer)
 
 void clearScreenRendererRecord(
     ClearScreenRenderer renderer,
-    const RendererRecordInfo* pInfo)
+    const ClearScreenRendererRecordInfo* pInfo)
 {
     ecs_trace("Recording command buffer...");
     ecs_log_push();

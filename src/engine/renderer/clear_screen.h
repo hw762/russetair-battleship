@@ -3,8 +3,6 @@
 #include "engine/renderer/renderer.h"
 #include <vulkan/vulkan.h>
 
-typedef struct RendererRecordInfo RendererRecordInfo;
-
 typedef struct ClearScreenRendererCreateInfo {
     const VkClearColorValue clearColor;
 } ClearScreenRendererCreateInfo;
@@ -15,6 +13,13 @@ void createClearScreenRenderer(const ClearScreenRendererCreateInfo* pCreateInfo,
 
 void destroyClearScreenRenderer(ClearScreenRenderer renderer);
 
+typedef struct ClearScreenRendererRecordInfo {
+    VkCommandBuffer commandBuffer;
+    VkFramebuffer framebuffer;
+    VkRenderPass renderPass;
+    VkExtent2D extent;
+} ClearScreenRendererRecordInfo;
+
 void clearScreenRendererRecord(
     ClearScreenRenderer renderer,
-    const RendererRecordInfo* pInfo);
+    const ClearScreenRendererRecordInfo* pInfo);
