@@ -119,5 +119,7 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         // vkFreeCommandBuffers(instance.renderDevice.handle, pool.handle, 1, &cmdBuf.handle);
     }
 
+    destroyClearScreenRenderer(renderer);
+
     return e;
 }
