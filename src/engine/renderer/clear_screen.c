@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 
-#include "vk/vk.h"
+#include "engine/vk/vk.h"
 
 void commandBufferRecordClear(const CommandBuffer* commandBuffer,
     const Framebuffer* frameBuffer,

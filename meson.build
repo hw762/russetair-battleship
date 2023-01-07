@@ -38,7 +38,7 @@ assimp_dep = dependency('assimp')
 # Others
 m_dep = cc.find_library('m', required : false)
 
-subdir('src')
+subdir('src/engine')
 flecs_subproject = subproject('flecs', default_options: ['default_library=static'])
 flecs_dep = flecs_subproject.get_variable('flecs_dep')
 thirdparty_src = files(
@@ -56,7 +56,7 @@ thirdparty_inc = include_directories([
 
 exe = executable('c_battleship', [
     'main.c', 
-    src,
+    engine_src,
     thirdparty_src
   ],
   dependencies : [
