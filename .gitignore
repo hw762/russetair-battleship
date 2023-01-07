@@ -17,3 +17,5 @@ bazel-genfiles
 bazel-out
 bazel-testlogs
 **/CMakeFiles/*
+
+.cache/

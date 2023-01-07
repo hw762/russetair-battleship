@@ -3,9 +3,9 @@
 #include "image.h"
 #include "physical_device.h"
 #include "vk.h"
+#include "engine/utils/math.h"
 
 #include <stb_ds.h>
-#include <utils/math.h>
 
 static VkSurfaceCapabilitiesKHR
 _getSurfaceCapabilitiesKHR(VkPhysicalDevice phys, VkSurfaceKHR surface)
