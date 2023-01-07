@@ -5,7 +5,6 @@
 #include <vulkan/vulkan.h>
 
 #include "engine/vk/vk.h"
-#include "renderer.h"
 #include "vulkan/vulkan_core.h"
 
 struct ClearScreenRenderer_T {

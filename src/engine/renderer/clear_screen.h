@@ -1,6 +1,5 @@
 #pragma once
 
-#include "engine/renderer/renderer.h"
 #include <vulkan/vulkan.h>
 
 typedef struct ClearScreenRendererCreateInfo {
