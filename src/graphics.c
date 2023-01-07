@@ -6,6 +6,7 @@
 #include <stb_ds.h>
 
 #include "renderer/clear_screen.h"
+#include "renderer/renderer.h"
 #include "vk/vk.h"
 
 extern const char* PROJECT_NAME;
@@ -81,6 +82,12 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
 
     CommandPool pool = newCommandPool(&system.renderDevice, &presentQueue);
 
+    ClearScreenRenderer renderer;
+    ClearScreenRendererCreateInfo rendererCI = {
+        .clearColor = { .float32 = { 0.1, 0.2, 0.3, 1.0 } },
+    };
+    createClearScreenRenderer(&rendererCI, &renderer);
+
     // Pre-record clears
     for (int i = 0; i < arrlen(swapchain.arrViews); ++i) {
         FramebufferCreateInfo fbCI = {
@@ -91,7 +98,13 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         };
         createFramebuffer(&fbCI, &arrFramebuffer[i]);
         CommandBuffer cmdBuf = newCommandBuffer(&pool);
-        commandBufferRecordClear(&cmdBuf, &arrFramebuffer[i], &swapchain.arrViews[i], w, h);
+        RendererRecordInfo recInfo = {
+            .commandBuffer = cmdBuf.handle,
+            .framebuffer = arrFramebuffer[i].vkFramebuffer,
+            .renderPass = rpass.vkRenderPass,
+            .extent = { .width = w, .height = h },
+        };
+        clearScreenRendererRecord(renderer, &recInfo);
         // Render to screen
         swapchainAcquire(&swapchain);
         // TODO: queue submit
