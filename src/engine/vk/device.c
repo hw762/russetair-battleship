@@ -80,7 +80,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
         .pNext = &imageless,
     };
     VkDevice device;
-    vkCheck(vkCreateDevice(vkPhysicalDevice, &deviceCI, NULL, &device))
+    vkIfFailed(vkCreateDevice(vkPhysicalDevice, &deviceCI, NULL, &device))
     {
         ecs_abort(1, "Failed to create logical device");
     }

@@ -48,7 +48,7 @@ void createClearScreenRenderer(const ClearScreenRendererCreateInfo* pCreateInfo,
         .pSubpasses = &subpass,
     };
     VkRenderPass vkRenderPass;
-    vkCheck(vkCreateRenderPass(pCreateInfo->device, &renderPassCI, NULL, &vkRenderPass))
+    vkIfFailed(vkCreateRenderPass(pCreateInfo->device, &renderPassCI, NULL, &vkRenderPass))
     {
         ecs_abort(1, "Failed to create render pass");
     }
@@ -76,7 +76,7 @@ void createClearScreenRenderer(const ClearScreenRendererCreateInfo* pCreateInfo,
         .height = pCreateInfo->height,
         .pNext = &fbACI,
     };
-    vkCheck(vkCreateFramebuffer(pCreateInfo->device, &fbCI, NULL, &framebuffer))
+    vkIfFailed(vkCreateFramebuffer(pCreateInfo->device, &fbCI, NULL, &framebuffer))
     {
         ecs_abort(1, "Failed to create [VkFrameBuffer]");
     }
@@ -123,13 +123,13 @@ void clearScreenRendererRecord(
         .pClearValues = &clearValue,
         .pNext = &attachmentBI,
     };
-    vkCheck(vkBeginCommandBuffer(pInfo->commandBuffer, &beginInfo))
+    vkIfFailed(vkBeginCommandBuffer(pInfo->commandBuffer, &beginInfo))
     {
         ecs_abort(1, "Failed to start command buffer");
     }
     vkCmdBeginRenderPass(pInfo->commandBuffer, &rpassBI, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdEndRenderPass(pInfo->commandBuffer);
-    vkCheck(vkEndCommandBuffer(pInfo->commandBuffer))
+    vkIfFailed(vkEndCommandBuffer(pInfo->commandBuffer))
     {
         ecs_abort(1, "Failed to end command buffer");
     }

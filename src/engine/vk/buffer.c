@@ -24,7 +24,7 @@ void createBuffer(const Device* pDevice, VkDeviceSize size,
     };
     VkBuffer buf;
     VmaAllocation alloc;
-    vkCheck(vmaCreateBuffer(pDevice->allocator.vmaAllocator, &info, &allocInfo, &buf, &alloc, NULL))
+    vkIfFailed(vmaCreateBuffer(pDevice->allocator.vmaAllocator, &info, &allocInfo, &buf, &alloc, NULL))
     {
         ecs_abort(1, "Failed to create buffer");
     }
@@ -44,7 +44,7 @@ void destroyBuffer(Buffer* pBuffer)
 void* bufferMap(Buffer* pBuffer)
 {
     if (pBuffer->pMappedMemory == NULL) {
-        vkCheck(vmaMapMemory(pBuffer->pDevice->allocator.vmaAllocator, pBuffer->vmaAllocation, &pBuffer->pMappedMemory))
+        vkIfFailed(vmaMapMemory(pBuffer->pDevice->allocator.vmaAllocator, pBuffer->vmaAllocation, &pBuffer->pMappedMemory))
         {
             ecs_abort(1, "Failed to map buffer");
         }

@@ -57,13 +57,13 @@ void clearScreenDynRendererRecord(
         .colorAttachmentCount = 1,
         .pColorAttachments = &raInfo,
     };
-    vkCheck(vkBeginCommandBuffer(pInfo->commandBuffer, &beginInfo))
+    vkIfFailed(vkBeginCommandBuffer(pInfo->commandBuffer, &beginInfo))
     {
         ecs_abort(1, "Failed to start command buffer");
     }
     vkCmdBeginRendering(pInfo->commandBuffer, &rInfo);
     vkCmdEndRendering(pInfo->commandBuffer);
-    vkCheck(vkEndCommandBuffer(pInfo->commandBuffer))
+    vkIfFailed(vkEndCommandBuffer(pInfo->commandBuffer))
     {
         ecs_abort(1, "Failed to end command buffer");
     }

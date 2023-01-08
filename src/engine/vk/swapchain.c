@@ -11,7 +11,7 @@ static VkSurfaceCapabilitiesKHR
 _getSurfaceCapabilitiesKHR(VkPhysicalDevice phys, VkSurfaceKHR surface)
 {
     VkSurfaceCapabilitiesKHR capabilities;
-    vkCheck(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys, surface, &capabilities))
+    vkIfFailed(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys, surface, &capabilities))
     {
         ecs_abort(1, "Failed to get physical devce surface capabilities");
     }
@@ -36,7 +36,7 @@ static SurfaceFormat
 _calcSurfaceFormat(VkPhysicalDevice phys, VkSurfaceKHR surface)
 {
     uint32_t count;
-    vkCheck(vkGetPhysicalDeviceSurfaceFormatsKHR(phys, surface, &count, NULL))
+    vkIfFailed(vkGetPhysicalDeviceSurfaceFormatsKHR(phys, surface, &count, NULL))
     {
         ecs_abort(1, "Failed to get count of surface formats");
     }
@@ -44,7 +44,7 @@ _calcSurfaceFormat(VkPhysicalDevice phys, VkSurfaceKHR surface)
         ecs_abort(1, "No surface format retrieved");
     }
     VkSurfaceFormatKHR formats[count];
-    vkCheck(vkGetPhysicalDeviceSurfaceFormatsKHR(phys, surface, &count, formats))
+    vkIfFailed(vkGetPhysicalDeviceSurfaceFormatsKHR(phys, surface, &count, formats))
     {
         ecs_abort(1, "Failed to get surface formats");
     }
@@ -114,7 +114,7 @@ _VkImageView(VkDevice device, VkImage image, ImageViewData data)
         },
     };
     VkImageView view;
-    vkCheck(vkCreateImageView(device, &ci, NULL, &view))
+    vkIfFailed(vkCreateImageView(device, &ci, NULL, &view))
     {
         ecs_abort(1, "Failed to create image view");
     }
@@ -128,13 +128,13 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
     VkImage* images = NULL;
     ImageView* views = NULL;
 
-    vkCheck(vkGetSwapchainImagesKHR(device, swapchain, &count, NULL))
+    vkIfFailed(vkGetSwapchainImagesKHR(device, swapchain, &count, NULL))
     {
         ecs_abort(1, "Failed to get number of surface images");
     }
     arrsetlen(images, count);
     arrsetlen(views, count);
-    vkCheck(vkGetSwapchainImagesKHR(device, swapchain, &count, images))
+    vkIfFailed(vkGetSwapchainImagesKHR(device, swapchain, &count, images))
     {
         ecs_abort(1, "Failed to get surface images");
     }
@@ -147,7 +147,7 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
         };
         VkFence fence;
-        vkCheck(vkCreateFence(device, &ci, NULL, &fence))
+        vkIfFailed(vkCreateFence(device, &ci, NULL, &fence))
         {
             ecs_abort(1, "Failed to create fence");
         }
@@ -155,11 +155,11 @@ _newImageViews(VkDevice device, VkSwapchainKHR swapchain, int format)
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         };
         VkSemaphore imgAcquisitionSemaphore, renderCompleteSemaphore;
-        vkCheck(vkCreateSemaphore(device, &semaphoreCI, NULL, &imgAcquisitionSemaphore))
+        vkIfFailed(vkCreateSemaphore(device, &semaphoreCI, NULL, &imgAcquisitionSemaphore))
         {
             ecs_abort(1, "Failed to create image acquisition semaphore");
         }
-        vkCheck(vkCreateSemaphore(device, &semaphoreCI, NULL, &renderCompleteSemaphore))
+        vkIfFailed(vkCreateSemaphore(device, &semaphoreCI, NULL, &renderCompleteSemaphore))
         {
             ecs_abort(1, "Failed to create render complete semaphore");
         }
@@ -211,7 +211,7 @@ void createSwapchain(const SwapchainCreateInfo* pCreateInfo, Swapchain* pSwapcha
         ci.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
     VkSwapchainKHR swapchain;
-    vkCheck(vkCreateSwapchainKHR(device, &ci, NULL, &swapchain))
+    vkIfFailed(vkCreateSwapchainKHR(device, &ci, NULL, &swapchain))
     {
         ecs_abort(1, "Failed to create swapchain");
     }

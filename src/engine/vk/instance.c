@@ -148,7 +148,7 @@ void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstan
         .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
         .pNext = &_debug_utils_messenger_create_info_ext
     };
-    vkCheck(vkCreateInstance(&ci, NULL, &pInstance->vkInstance))
+    vkIfFailed(vkCreateInstance(&ci, NULL, &pInstance->vkInstance))
     {
         ecs_abort(1, "Failed to created Vulkan instance");
     }

@@ -18,14 +18,14 @@ static const char* PHYSICAL_DEVICE_TYPES[] = {
 static VkPhysicalDevice* _getPhysicalDevices(VkInstance instance)
 {
     uint32_t count;
-    vkCheck(vkEnumeratePhysicalDevices(instance, &count, NULL))
+    vkIfFailed(vkEnumeratePhysicalDevices(instance, &count, NULL))
     {
         ecs_abort(1, "Failed to enumerate number of physical devices");
     }
     ecs_trace("Found [%d] physical devices", count);
     VkPhysicalDevice* p = NULL;
     arrsetlen(p, count);
-    vkCheck(vkEnumeratePhysicalDevices(instance, &count, p))
+    vkIfFailed(vkEnumeratePhysicalDevices(instance, &count, p))
     {
         ecs_abort(1, "Failed to enumerate physical devices");
     }
@@ -44,13 +44,13 @@ static VkExtensionProperties*
 _getPhysicalDeviceExtensionProperties(VkPhysicalDevice device)
 {
     uint32_t n_exts;
-    vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, NULL))
+    vkIfFailed(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, NULL))
     {
         ecs_abort(1, "Failed to get number of device extension properties");
     }
     VkExtensionProperties* exts = NULL;
     arrsetlen(exts, n_exts);
-    vkCheck(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, exts))
+    vkIfFailed(vkEnumerateDeviceExtensionProperties(device, NULL, &n_exts, exts))
     {
         ecs_abort(1, "Failed to get device extension properties");
     }

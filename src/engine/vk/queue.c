@@ -25,7 +25,7 @@ void queueSubmit(const Queue* queue, const CommandBuffer* cmdBuf,
               .pSignalSemaphores = &signalSemaphore,
               .pWaitDstStageMask = &dstStageMask,
           };
-    vkCheck(vkQueueSubmit(queue->handle, 1, &submit, fence))
+    vkIfFailed(vkQueueSubmit(queue->handle, 1, &submit, fence))
     {
         ecs_abort(1, "Failed to submit queue");
     }

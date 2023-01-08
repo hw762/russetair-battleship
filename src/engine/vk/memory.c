@@ -18,7 +18,7 @@ void createMemoryAllocator(const Device* pDev, MemoryAllocator* pAllocator)
         .physicalDevice = pDev->phys->vkPhysicalDevice,
         .device = pDev->vkDevice,
     };
-    vkCheck(vmaCreateAllocator(&ci, &pAllocator->vmaAllocator))
+    vkIfFailed(vmaCreateAllocator(&ci, &pAllocator->vmaAllocator))
     {
         ecs_abort(1, "Failed to create VMA allocator");
     }
