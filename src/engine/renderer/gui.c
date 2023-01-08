@@ -8,7 +8,10 @@
 
 struct GuiRenderer_T {
     struct nk_context ctx;
+    VkDevice device;
+    VmaAllocator allocator;
     VkImage fontAtlasImage;
+    VmaAllocation fontAtlasImageAlloc;
     VkImageView fontAtlasView;
 };
 
@@ -168,8 +171,17 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
     nk_init_default(&ctx, &font->handle);
     *renderer = (struct GuiRenderer_T) {
         .ctx = ctx,
+        .device = pInfo->device,
+        .allocator = pInfo->allocator,
         .fontAtlasImage = vkImage,
         .fontAtlasView = view,
     };
     *pRenderer = renderer;
+}
+
+void destroyGuiRenderer(GuiRenderer r)
+{
+    vkDestroyImageView(r->device, r->fontAtlasView, NULL);
+    vmaDestroyImage(r->allocator, r->fontAtlasImage, r->fontAtlasImageAlloc);
+    free(r);
 }
