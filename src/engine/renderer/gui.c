@@ -74,6 +74,7 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
     vkCheck(vkBeginCommandBuffer(cmdBuf, &cmdBI), "Failed to start command");
 
     VkImageMemoryBarrier imgMemBarrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .subresourceRange = {
@@ -86,8 +87,8 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
         .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         .image = dst,
-        .srcAccessMask = VK_ACCESS_2_NONE,
-        .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
     };
 
     vkCmdPipelineBarrier(cmdBuf,
@@ -118,12 +119,13 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
 
     // Then, convert layout
     vkCmdPipelineBarrier(cmdBuf,
-        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
         0, 0, NULL, 0, NULL, 1, &imgMemBarrier);
 
     vkEndCommandBuffer(cmdBuf);
     VkSubmitInfo submitInfo = {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .commandBufferCount = 1,
         .pCommandBuffers = &cmdBuf,
     };

@@ -1,5 +1,6 @@
 #include "physical_device.h"
 #include "vk.h"
+#include "vulkan/vulkan_core.h"
 
 #include <stb_ds.h>
 
@@ -113,8 +114,9 @@ const PhysicalDevice* selectPhysicalDevice(const PhysicalDevice* arrPhysicalDevi
     ecs_log_push();
     for (int i = 0; i < arrlen(arrPhysicalDevices); ++i) {
         const PhysicalDevice* phys = &arrPhysicalDevices[i];
-        if (hasKHRSwapchainExt(phys) && hasGraphicsQueueFamily(phys)) {
+        if (hasKHRSwapchainExt(phys) && hasGraphicsQueueFamily(phys) && phys->imageless.imagelessFramebuffer) {
             ecs_trace("SELECTED VkPhysicalDevice = %#p, [%s]", phys->vkPhysicalDevice, phys->props.deviceName);
+            ecs_trace("  Supports Dynamic Rendering? %d", phys->dynamic.dynamicRendering);
             selected = phys;
             break;
         } else {
@@ -137,7 +139,8 @@ PhysicalDevice* getPhysicalDevices(const Instance* pInstance)
     arrsetlen(physicalDevices, arrlen(phys));
     for (int i = 0; i < arrlen(phys); ++i) {
         VkPhysicalDevice d = phys[i];
-        physicalDevices[i] = (PhysicalDevice) {
+        PhysicalDevice* pd = &physicalDevices[i];
+        *pd = (PhysicalDevice) {
             .vkPhysicalDevice = d,
             .props = _getPhysicalDeviceProperties(d),
             .arrExtProps = _getPhysicalDeviceExtensionProperties(d),
@@ -146,6 +149,18 @@ PhysicalDevice* getPhysicalDevices(const Instance* pInstance)
             .memProps = _getPhysicalDeviceMemoryProperties(d),
             .pInstance = pInstance,
         };
+        pd->imageless = (VkPhysicalDeviceImagelessFramebufferFeatures) {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES,
+        };
+        pd->dynamic = (VkPhysicalDeviceDynamicRenderingFeatures) {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+            .pNext = &pd->imageless,
+        };
+        VkPhysicalDeviceFeatures2 f2 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+            .pNext = &pd->dynamic,
+        };
+        vkGetPhysicalDeviceFeatures2(d, &f2);
     }
     arrfree(phys);
     ecs_log_pop();

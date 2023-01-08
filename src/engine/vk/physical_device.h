@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vulkan/vulkan_core.h"
 #include <stdbool.h>
 #include <vulkan/vulkan.h>
 
@@ -11,6 +12,8 @@ typedef struct PhysicalDevice {
     const VkExtensionProperties* arrExtProps;
     const VkQueueFamilyProperties* arrQueueFamilyProps;
     VkPhysicalDeviceFeatures features;
+    VkPhysicalDeviceImagelessFramebufferFeatures imageless;
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic;
     VkPhysicalDeviceMemoryProperties memProps;
     //
     const Instance* pInstance;
