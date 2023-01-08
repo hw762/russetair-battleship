@@ -2,6 +2,7 @@
 
 #include <flecs.h>
 #include <stdlib.h>
+#include <vulkan/vulkan.h>
 
 #include "engine/vk/check.h"
 #include "vulkan/vulkan_core.h"
@@ -64,7 +65,7 @@ _createTransferBuffer(VmaAllocator allocator, uint32_t pixels,
 
 static void
 _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
-    VkImage dest, uint32_t width, uint32_t height)
+    VkImage dst, uint32_t width, uint32_t height)
 {
     VkCommandBufferBeginInfo cmdBI = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -72,7 +73,7 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
     };
     vkCheck(vkBeginCommandBuffer(cmdBuf, &cmdBI), "Failed to start command");
 
-    VkImageMemoryBarrier2 imgMemBarrier = {
+    VkImageMemoryBarrier imgMemBarrier = {
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .subresourceRange = {
@@ -84,23 +85,16 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
         },
         .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .image = dest,
-        .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+        .image = dst,
         .srcAccessMask = VK_ACCESS_2_NONE,
-        .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
         .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
     };
 
-    VkDependencyInfo dInfo = {
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers = &imgMemBarrier,
-    };
+    vkCmdPipelineBarrier(cmdBuf,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, NULL, 0, NULL, 1, &imgMemBarrier);
 
-    vkCmdPipelineBarrier2(cmdBuf, &dInfo);
-
-    VkBufferImageCopy2 region = {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+    VkBufferImageCopy region = {
         .imageSubresource = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .layerCount = 1,
@@ -111,39 +105,29 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
             .depth = 1,
         }
     };
-    VkCopyBufferToImageInfo2 copyInfo = {
-        .sType = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
-        .srcBuffer = src,
-        .dstImage = dest,
-        .regionCount = 1,
-        .pRegions = &region,
-        .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-    };
 
     // First, copy to image
-    vkCmdCopyBufferToImage2(cmdBuf, &copyInfo);
+    vkCmdCopyBufferToImage(cmdBuf, src, dst,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     imgMemBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    imgMemBarrier.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
-    imgMemBarrier.image = dest;
+    imgMemBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imgMemBarrier.image = dst;
     imgMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     imgMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     // Then, convert layout
-    vkCmdPipelineBarrier2(cmdBuf, &dInfo);
+    vkCmdPipelineBarrier(cmdBuf,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0, 0, NULL, 0, NULL, 1, &imgMemBarrier);
 
     vkEndCommandBuffer(cmdBuf);
-    VkSubmitInfo2 submitInfo = {
+    VkSubmitInfo submitInfo = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-        .commandBufferInfoCount = 1,
-        .pCommandBufferInfos = (VkCommandBufferSubmitInfo[]) {
-            {
-                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-                .commandBuffer = cmdBuf,
-            },
-        }
+        .commandBufferCount = 1,
+        .pCommandBuffers = &cmdBuf,
     };
-    vkCheck(vkQueueSubmit2(queue, 1, &submitInfo, VK_NULL_HANDLE),
+    vkCheck(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE),
         "Failed to submit image transfer");
     vkCheck(vkQueueWaitIdle(queue), "Failed to execute transfer");
 }

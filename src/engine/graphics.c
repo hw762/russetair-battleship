@@ -97,7 +97,7 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
             .height = swapchain.extent.height,
         };
         createGuiRenderer(&guiCI, &guiRenderer);
-        freeCommandBuffer(&cmdBuf);
+        // freeCommandBuffer(&cmdBuf);
     }
 
     // Pre-record clears
