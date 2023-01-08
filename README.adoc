@@ -29,17 +29,8 @@ If entity is supposed to be "system-level", such as graphics system, vulkan syst
 - [x] Refactor with Prefabs
 - [x] Refactor ECS declarations
 - [x] Clear screen render pass
-- [ ] Refactor Vulkan types
-- [ ] Triangle
-- [ ] Select best device instead of first device
-- [ ] Proper cleanup
-
-Workflow (for each material):
-
-. Acquire image from swapchain
-. Recording command buffer
-.. Record render pass
-. Submit to queue 
+- [ ] Nuklear GUI
+- [ ] Refactor to use less wrappers
 
 === 2D Debugger
 
