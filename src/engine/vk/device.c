@@ -6,6 +6,7 @@
 
 #include "memory.h"
 #include "physical_device.h"
+#include "vulkan/vulkan_core.h"
 
 #ifdef __APPLE__
 static const char* _requiredExtensions[] = {
@@ -70,6 +71,11 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
         .imagelessFramebuffer = VK_TRUE,
         .pNext = &dynamic,
     };
+    VkPhysicalDeviceSynchronization2Features sync2 = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+        .synchronization2 = VK_TRUE,
+        .pNext = &imageless,
+    };
     VkDeviceCreateInfo deviceCI = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .ppEnabledExtensionNames = _requiredExtensions,
@@ -77,7 +83,7 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
         .pEnabledFeatures = &features,
         .queueCreateInfoCount = nQueues,
         .pQueueCreateInfos = queueCI,
-        .pNext = &imageless,
+        .pNext = &sync2,
     };
     VkDevice device;
     vkIfFailed(vkCreateDevice(vkPhysicalDevice, &deviceCI, NULL, &device))
