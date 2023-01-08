@@ -22,3 +22,4 @@ typedef struct CommandBuffer {
 } CommandBuffer;
 
 CommandBuffer newCommandBuffer(const CommandPool* pool);
+void freeCommandBuffer(CommandBuffer* cmdBuf);

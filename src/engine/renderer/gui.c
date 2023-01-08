@@ -19,6 +19,7 @@ static void
 _createAtlasImage(VmaAllocator allocator, uint32_t width, uint32_t height,
     VkImage* pVkImage, VmaAllocation* pVmaAlloc)
 {
+    assert(width != 0 && height != 0);
     VkImageCreateInfo imageCI = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType = VK_IMAGE_TYPE_2D,
@@ -35,11 +36,9 @@ _createAtlasImage(VmaAllocator allocator, uint32_t width, uint32_t height,
     VmaAllocationCreateInfo allocCI = {
         .usage = VMA_MEMORY_USAGE_AUTO,
     };
-    vkIfFailed(vmaCreateImage(allocator, &imageCI, &allocCI, pVkImage,
-        pVmaAlloc, NULL))
-    {
-        ecs_abort(1, "Failed to allocate image for [GuiRenderer]");
-    }
+    vkCheck(vmaCreateImage(allocator, &imageCI, &allocCI, pVkImage,
+                pVmaAlloc, NULL),
+        "Failed to allocate image for [GuiRenderer]");
 }
 
 static void
@@ -151,6 +150,8 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
 
 void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRenderer)
 {
+    ecs_trace("Creating [GuiRenderer]");
+    ecs_log_push();
     struct GuiRenderer_T* renderer = malloc(sizeof(*renderer));
     if (renderer == NULL) {
         ecs_abort(1, "Failed to malloc [GuiRenderer]");
@@ -164,11 +165,12 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
     int w, h;
     const void* image
         = nk_font_atlas_bake(&atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
+    assert(w != 0 && h != 0);
 
     // Create atlas image
     VkImage vkImage;
     VmaAllocation vmaAlloc;
-    _createAtlasImage(pInfo->allocator, pInfo->width, pInfo->height, &vkImage,
+    _createAtlasImage(pInfo->allocator, w, h, &vkImage,
         &vmaAlloc);
     // Create staging buffer
     VkBuffer stagingBuffer;
@@ -212,10 +214,12 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
         .fontAtlasView = view,
     };
     *pRenderer = renderer;
+    ecs_log_pop();
 }
 
 void destroyGuiRenderer(GuiRenderer r)
 {
+    ecs_trace("Destroying [GuiRenderer]");
     vkDestroyImageView(r->device, r->fontAtlasView, NULL);
     vmaDestroyImage(r->allocator, r->fontAtlasImage, r->fontAtlasImageAlloc);
     free(r);

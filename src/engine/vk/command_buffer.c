@@ -7,6 +7,7 @@
 #include "queue.h"
 #include "swapchain.h"
 #include "vk.h"
+#include "vulkan/vulkan_core.h"
 
 CommandPool
 newCommandPool(const Device* device, const Queue* queue)
@@ -56,4 +57,10 @@ newCommandBuffer(const CommandPool* pool)
         .handle = commandBuffer,
         .commandPool = pool,
     };
+}
+
+void freeCommandBuffer(CommandBuffer* cmdBuf)
+{
+    vkFreeCommandBuffers(cmdBuf->commandPool->device->vkDevice, cmdBuf->commandPool->handle, 1, &cmdBuf->handle);
+    cmdBuf->handle = VK_NULL_HANDLE;
 }

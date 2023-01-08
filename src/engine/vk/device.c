@@ -4,8 +4,8 @@
 #include <limits.h>
 #include <stb_ds.h>
 
+#include "memory.h"
 #include "physical_device.h"
-#include "vulkan/vulkan_core.h"
 
 #ifdef __APPLE__
 static const char* _requiredExtensions[] = {
@@ -98,6 +98,7 @@ void createDevice(const PhysicalDevice* arrPhysicalDevices, Device* pDevice)
     pDevice->phys = selectPhysicalDevice(arrPhysicalDevices);
     // Create logical device
     pDevice->vkDevice = _newLogicalDevice(pDevice->phys);
+    createMemoryAllocator(pDevice, &pDevice->allocator);
     ecs_log_pop();
 }
 

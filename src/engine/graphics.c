@@ -6,6 +6,8 @@
 #include <stb_ds.h>
 #include <vulkan/vulkan.h>
 
+#include "engine/renderer/gui.h"
+#include "engine/vk/command_buffer.h"
 #include "renderer/clear_screen.h"
 #include "renderer/renderer.h"
 #include "vk/vk.h"
@@ -83,6 +85,20 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         .clearColor = { .float32 = { 0.1, 0.2, 0.3, 1.0 } },
     };
     createClearScreenRenderer(&rendererCI, &renderer);
+    GuiRenderer guiRenderer;
+    {
+        CommandBuffer cmdBuf = newCommandBuffer(&pool);
+        GuiRendererCreateInfo guiCI = {
+            .device = system.renderDevice.vkDevice,
+            .allocator = system.renderDevice.allocator.vmaAllocator,
+            .cmdBuffer = cmdBuf.handle,
+            .queue = presentQueue.handle,
+            .width = swapchain.extent.width,
+            .height = swapchain.extent.height,
+        };
+        freeCommandBuffer(&cmdBuf);
+        createGuiRenderer(&guiCI, &guiRenderer);
+    }
 
     // Pre-record clears
     for (int i = 0; i < arrlen(swapchain.arrViews); ++i) {

@@ -74,6 +74,7 @@ void createClearScreenRenderer(const ClearScreenRendererCreateInfo* pCreateInfo,
         .attachmentCount = 1,
         .width = pCreateInfo->width,
         .height = pCreateInfo->height,
+        .layers = 1,
         .pNext = &fbACI,
     };
     vkIfFailed(vkCreateFramebuffer(pCreateInfo->device, &fbCI, NULL, &framebuffer))

@@ -17,6 +17,7 @@ void createMemoryAllocator(const Device* pDev, MemoryAllocator* pAllocator)
         .instance = pDev->phys->pInstance->vkInstance,
         .physicalDevice = pDev->phys->vkPhysicalDevice,
         .device = pDev->vkDevice,
+        .vulkanApiVersion = VK_API_VERSION_1_3,
     };
     vkIfFailed(vmaCreateAllocator(&ci, &pAllocator->vmaAllocator))
     {
