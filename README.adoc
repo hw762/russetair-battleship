@@ -30,6 +30,7 @@ If entity is supposed to be "system-level", such as graphics system, vulkan syst
 - [x] Refactor ECS declarations
 - [x] Clear screen render pass
 - [ ] Nuklear GUI
+- [ ] Use xmake
 - [ ] Refactor to use less wrappers
 
 === 2D Debugger
