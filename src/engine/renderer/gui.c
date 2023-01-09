@@ -1,19 +1,38 @@
 #include "gui.h"
 
 #include <flecs.h>
+#include <nuklear.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
 
 #include "engine/vk/check.h"
 #include "vulkan/vulkan_core.h"
 
+#define MAX_VERTEX_BUFFER 512 * 1024
+#define MAX_ELEMENT_BUFFER 128 * 1024
+
+struct NkVertex {
+    float position[2];
+    float uv[2];
+    nk_byte rgba[4];
+};
+
 struct GuiRenderer_T {
     struct nk_context ctx;
     VkDevice device;
     VmaAllocator allocator;
+    // Fonts
+    struct nk_font_atlas atlas;
     VkImage fontAtlasImage;
     VmaAllocation fontAtlasImageAlloc;
     VkImageView fontAtlasView;
+    struct nk_draw_null_texture tex_null;
+    //
+    struct nk_buffer cmds;
+    VkBuffer verticesBuffer;
+    VmaAllocation verticesBufferAlloc;
+    VkBuffer elementsBuffer;
+    VmaAllocation elementsBufferAlloc;
 };
 
 static void
@@ -64,7 +83,7 @@ _createTransferBuffer(VmaAllocator allocator, uint32_t pixels,
 }
 
 static void
-_transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
+_transferAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
     VkImage dst, uint32_t width, uint32_t height)
 {
     VkCommandBufferBeginInfo cmdBI = {
@@ -134,14 +153,8 @@ _transferToAtlas(VkCommandBuffer cmdBuf, VkQueue queue, VkBuffer src,
     vkCheck(vkQueueWaitIdle(queue), "Failed to execute transfer");
 }
 
-void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRenderer)
+static void _initCtx(const GuiRendererCreateInfo* pInfo, GuiRenderer renderer)
 {
-    ecs_trace("Creating [GuiRenderer]");
-    ecs_log_push();
-    struct GuiRenderer_T* renderer = malloc(sizeof(*renderer));
-    if (renderer == NULL) {
-        ecs_abort(1, "Failed to malloc [GuiRenderer]");
-    }
     // Initialize Nuklear context
     struct nk_context ctx;
     struct nk_font_atlas atlas;
@@ -168,7 +181,7 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
     void* pTransfer = stagingBufAllocInfo.pMappedData;
     memcpy(pTransfer, image, w * h * 4);
     // Upload to device
-    _transferToAtlas(pInfo->cmdBuffer, pInfo->queue, stagingBuffer, vkImage, w,
+    _transferAtlas(pInfo->cmdBuffer, pInfo->queue, stagingBuffer, vkImage, w,
         h);
     vmaDestroyBuffer(pInfo->allocator, stagingBuffer, stagingBufAlloc);
 
@@ -190,15 +203,58 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
         "Failed to create image view");
 
     // Clean up
-    nk_font_atlas_end(&atlas, nk_handle_id(0), NULL);
+    struct nk_draw_null_texture tex_null;
+    nk_font_atlas_end(&atlas, nk_handle_ptr(renderer->fontAtlasView), &tex_null);
+    nk_font_atlas_cleanup(&atlas);
     nk_init_default(&ctx, &font->handle);
+}
+
+static void _initBuffers(const GuiRendererCreateInfo* pInfo, GuiRenderer renderer)
+{
+    nk_buffer_init_default(&renderer->cmds);
+    VkBufferCreateInfo vbufCI = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = MAX_VERTEX_BUFFER,
+        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    };
+    VmaAllocationCreateInfo aci = {
+        .usage = VMA_MEMORY_USAGE_AUTO,
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+    };
+    VmaAllocationInfo ai;
+    // Allocate vertex buffer
+    vkCheck(vmaCreateBuffer(pInfo->allocator, &vbufCI, &aci,
+                &renderer->verticesBuffer, &renderer->verticesBufferAlloc, &ai),
+        "Failed to create vertex buffer");
+    // Allocate element buffer
+    VkBufferCreateInfo ebufCI = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = MAX_ELEMENT_BUFFER,
+        .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+    };
+    vkCheck(vmaCreateBuffer(pInfo->allocator, &ebufCI, &aci,
+                &renderer->elementsBuffer, &renderer->elementsBufferAlloc, &ai),
+        "Failed to create element buffer");
+}
+
+void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRenderer)
+{
+    ecs_trace("Creating [GuiRenderer]");
+    ecs_log_push();
+    struct GuiRenderer_T* renderer = malloc(sizeof(*renderer));
+    if (renderer == NULL) {
+        ecs_abort(1, "Failed to malloc [GuiRenderer]");
+    }
     *renderer = (struct GuiRenderer_T) {
-        .ctx = ctx,
         .device = pInfo->device,
         .allocator = pInfo->allocator,
-        .fontAtlasImage = vkImage,
-        .fontAtlasView = view,
     };
+
+    _initCtx(pInfo, renderer);
+    _initBuffers(pInfo, renderer);
+    // Other structures
+
+    // Output
     *pRenderer = renderer;
     ecs_log_pop();
 }
@@ -206,7 +262,47 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
 void destroyGuiRenderer(GuiRenderer r)
 {
     ecs_trace("Destroying [GuiRenderer]");
+    nk_font_atlas_clear(&r->atlas);
     vkDestroyImageView(r->device, r->fontAtlasView, NULL);
     vmaDestroyImage(r->allocator, r->fontAtlasImage, r->fontAtlasImageAlloc);
     free(r);
+}
+
+static void _convertDrawCommands(GuiRenderer r)
+{
+    static const struct nk_draw_vertex_layout_element vertex_layout[] = {
+        { NK_VERTEX_POSITION, NK_FORMAT_FLOAT, NK_OFFSETOF(struct NkVertex, position) },
+        { NK_VERTEX_TEXCOORD, NK_FORMAT_FLOAT, NK_OFFSETOF(struct NkVertex, uv) },
+        { NK_VERTEX_COLOR, NK_FORMAT_R8G8B8A8, NK_OFFSETOF(struct NkVertex, rgba) },
+        { NK_VERTEX_LAYOUT_END }
+    };
+
+    struct nk_convert_config config = {
+        .vertex_layout = vertex_layout,
+        .vertex_size = sizeof(struct NkVertex),
+        .vertex_alignment = NK_ALIGNOF(struct NkVertex),
+        .tex_null = r->tex_null,
+        .circle_segment_count = 22,
+        .curve_segment_count = 22,
+        .arc_segment_count = 22,
+        .global_alpha = 1.0f,
+        .shape_AA = NK_ANTI_ALIASING_OFF,
+        .line_AA = NK_ANTI_ALIASING_OFF,
+    };
+    struct nk_buffer vbuf, ebuf;
+    void *vertices, *elements;
+    vmaMapMemory(r->allocator, r->verticesBufferAlloc, &vertices);
+    vmaMapMemory(r->allocator, r->elementsBufferAlloc, &elements);
+
+    nk_buffer_init_fixed(&vbuf, vertices, MAX_VERTEX_BUFFER);
+    nk_buffer_init_fixed(&ebuf, elements, MAX_ELEMENT_BUFFER);
+    nk_convert(&r->ctx, &r->cmds, &vbuf, &ebuf, &config);
+
+    vmaUnmapMemory(r->allocator, r->verticesBufferAlloc);
+    vmaUnmapMemory(r->allocator, r->elementsBufferAlloc);
+}
+
+void guiRendererRecord(GuiRenderer renderer, const GuiRendererRecordInfo* pInfo)
+{
+    _convertDrawCommands(renderer);
 }

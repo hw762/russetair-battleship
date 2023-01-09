@@ -26,3 +26,5 @@ typedef struct GuiRendererRecordInfo {
     uint32_t width;
     uint32_t height;
 } GuiRendererRecordInfo;
+
+void guiRendererRecord(GuiRenderer renderer, const GuiRendererRecordInfo* pInfo);
