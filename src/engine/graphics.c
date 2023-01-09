@@ -122,7 +122,6 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
             view->renderCompleteSemaphore, view->fence);
 
         swapchainPresent(&swapchain, presentQueue.handle);
-        // vkFreeCommandBuffers(instance.renderDevice.handle, pool.handle, 1, &cmdBuf.handle);
     }
 
     destroyClearScreenRenderer(renderer);

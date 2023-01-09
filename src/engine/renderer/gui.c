@@ -4,12 +4,13 @@
 #include <nuklear.h>
 #include <stdlib.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 #include "engine/vk/check.h"
-#include "vulkan/vulkan_core.h"
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
+#define MAX_TEXTURES 128
 
 struct NkVertex {
     float position[2];
@@ -33,6 +34,11 @@ struct GuiRenderer_T {
     VmaAllocation verticesBufferAlloc;
     VkBuffer elementsBuffer;
     VmaAllocation elementsBufferAlloc;
+    //
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
 };
 
 static void
@@ -237,6 +243,63 @@ static void _initBuffers(const GuiRendererCreateInfo* pInfo, GuiRenderer rendere
         "Failed to create element buffer");
 }
 
+static void _initDescriptorSets(const GuiRendererCreateInfo* pInfo, GuiRenderer r)
+{
+    VkDescriptorSetLayoutBinding bindings[] = {
+        {
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        },
+        {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+    };
+    VkDescriptorSetLayoutCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = 2,
+        .pBindings = bindings,
+    };
+    vkCheck(vkCreateDescriptorSetLayout(r->device, &ci, NULL, &r->descriptorSetLayout),
+        "Failed to create descriptor set layout");
+    VkDescriptorPoolCreateInfo dpCI = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .poolSizeCount = 2,
+        .pPoolSizes = (VkDescriptorPoolSize[]) {
+            {
+                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = 1,
+            },
+            {
+                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = MAX_TEXTURES,
+            } },
+        .maxSets = 1 + MAX_TEXTURES,
+        .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+    };
+    vkCheck(vkCreateDescriptorPool(pInfo->device, &dpCI, NULL, &r->descriptorPool), "Failed to create descriptor pool");
+}
+
+static void _initPipeline(const GuiRendererCreateInfo* pInfo, GuiRenderer r)
+{
+    VkPipelineLayoutCreateInfo plCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = 1,
+        .pSetLayouts = &r->descriptorSetLayout,
+    };
+    vkCheck(vkCreatePipelineLayout(r->device, &plCI, NULL, &r->pipelineLayout),
+        "Failed to create pipeline layout");
+
+    // Create Pipeline
+    VkGraphicsPipelineCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    };
+}
+
 void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRenderer)
 {
     ecs_trace("Creating [GuiRenderer]");
@@ -252,7 +315,8 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
 
     _initCtx(pInfo, renderer);
     _initBuffers(pInfo, renderer);
-    // Other structures
+    _initDescriptorSets(pInfo, renderer);
+    _initPipeline(pInfo, renderer);
 
     // Output
     *pRenderer = renderer;
@@ -302,7 +366,55 @@ static void _convertDrawCommands(GuiRenderer r)
     vmaUnmapMemory(r->allocator, r->elementsBufferAlloc);
 }
 
+static void _bindTexture(GuiRenderer r, const GuiRendererRecordInfo* pInfo, VkImageView tex)
+{
+    VkDescriptorSet ds;
+    VkDescriptorSetAllocateInfo ai = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = r->descriptorPool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &r->descriptorSetLayout,
+    };
+    vkCheck(vkAllocateDescriptorSets(r->device, &ai, &ds),
+        "Failed to allocate descriptor set");
+    vkCmdBindDescriptorSets(
+        pInfo->commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS, r->pipelineLayout,
+        3, 1, &ds, 0, VK_NULL_HANDLE);
+}
+
+static void _drawCommands(GuiRenderer r, const GuiRendererRecordInfo* pInfo)
+{
+    VkImageView currentTex = VK_NULL_HANDLE;
+    uint32_t indexOffset = 0;
+    const struct nk_draw_command* cmd;
+    nk_draw_foreach(cmd, &r->ctx, &r->cmds)
+    {
+        if (!cmd->elem_count || !cmd->texture.ptr)
+            continue;
+        if (cmd->texture.ptr != currentTex)
+            _bindTexture(r, pInfo, cmd->texture.ptr);
+        VkRect2D scissor = {
+            .extent = {
+                .width = (uint32_t)cmd->clip_rect.w,
+                .height = (uint32_t)cmd->clip_rect.h,
+            },
+            .offset = {
+                .x = (uint32_t)NK_MAX(cmd->clip_rect.x, 0.f),
+                .y = (uint32_t)NK_MAX(cmd->clip_rect.y, 0.f),
+            }
+        };
+        vkCmdSetScissor(pInfo->commandBuffer, 0, 1, &scissor);
+        vkCmdDrawIndexed(pInfo->commandBuffer, cmd->elem_count, 1, indexOffset, 0, 0);
+        indexOffset += cmd->elem_count;
+    }
+}
+
 void guiRendererRecord(GuiRenderer renderer, const GuiRendererRecordInfo* pInfo)
 {
     _convertDrawCommands(renderer);
+    _drawCommands(renderer, pInfo);
+    vkCheck(vkResetDescriptorPool(renderer->device, renderer->descriptorPool, 0),
+        "Failed to reset descriptor pool");
+    nk_clear(&renderer->ctx);
 }
