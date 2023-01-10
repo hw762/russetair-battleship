@@ -1,5 +1,6 @@
 package hw762.russetair.vk
 
+import hw762.russetair.vk.VulkanUtils.Companion.stringsToPointerBuffer
 import hw762.russetair.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.GLFWVulkan
@@ -8,6 +9,8 @@ import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.EXTDebugUtils.*
+import org.lwjgl.vulkan.KHRPortabilitySubset.*
+import org.lwjgl.vulkan.KHRPortabilityEnumeration.*
 import org.lwjgl.vulkan.VK13.*
 import org.tinylog.kotlin.Logger
 
@@ -36,13 +39,16 @@ class Instance(val validate: Boolean) {
                 Logger.debug("Validation: {}", supportsValidation)
             }
             // Set required layers
-            var requiredLayers: PointerBuffer? = null
+            val requiredLayers: PointerBuffer?
             if (supportsValidation) {
-                requiredLayers = stack.mallocPointer(numValidationLayers)
                 for (i in 0 until numValidationLayers) {
-                    Logger.debug("Using a validation layer [{}]", validationLayers[i])
-                    requiredLayers!!.put(i, stack.ASCII(validationLayers[i]))
+                    Logger.debug("Using a validation layer [${validationLayers[i]}]")
                 }
+                val layers = validationLayers
+                requiredLayers = stringsToPointerBuffer(stack, layers)
+
+            } else {
+                requiredLayers = null
             }
             // GLFW extensions
             val glfwExtensions = GLFWVulkan.glfwGetRequiredInstanceExtensions()
@@ -52,13 +58,14 @@ class Instance(val validate: Boolean) {
                     throw RuntimeException("Failed to find the GLFW platform surface extensions")
                 }
             val requiredExtensions: PointerBuffer
+            val vkPortability = stack.UTF8(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)
             if (supportsValidation) {
                 val vkDebugUtilsExtension = stack.UTF8(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
-                requiredExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
-                requiredExtensions.put(glfwExtensions).put(vkDebugUtilsExtension)
+                requiredExtensions = stack.mallocPointer(glfwExtensions.remaining() + 2)
+                requiredExtensions.put(glfwExtensions).put(vkDebugUtilsExtension).put(vkPortability)
             } else {
                 requiredExtensions = stack.mallocPointer(glfwExtensions.remaining() + 1)
-                requiredExtensions.put(glfwExtensions)
+                requiredExtensions.put(glfwExtensions).put(vkPortability)
             }
             requiredExtensions.flip()
             // Setup debug callback
@@ -76,6 +83,7 @@ class Instance(val validate: Boolean) {
                 .pApplicationInfo(appInfo)
                 .ppEnabledLayerNames(requiredLayers)
                 .ppEnabledExtensionNames(requiredExtensions)
+                .flags(VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR)
             val pInstance = stack.mallocPointer(1)
             vkCheck(vkCreateInstance(instanceInfo, null, pInstance), "Error creating instance")
             vkInstance = VkInstance(pInstance[0], instanceInfo)

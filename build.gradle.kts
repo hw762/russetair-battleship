@@ -36,8 +36,7 @@ tasks.named<Test>("test") {
 }
 
 /// LWJGL Below
-
-val lwjglVersion = "3.3.1"
+val lwjglVersion = "3.3.2-SNAPSHOT"
 val jomlVersion = "1.10.5"
 val steamworks4jVersion = "1.9.0"
 val `steamworks4j-serverVersion` = "1.9.0"
@@ -67,6 +66,7 @@ val lwjglNatives = Pair(
 
 repositories {
     mavenCentral()
+    maven("https://oss.sonatype.org/content/repositories/snapshots/")
 }
 
 dependencies {
@@ -76,9 +76,13 @@ dependencies {
     implementation("org.lwjgl", "lwjgl-assimp")
     implementation("org.lwjgl", "lwjgl-cuda")
     implementation("org.lwjgl", "lwjgl-egl")
+    implementation("org.lwjgl", "lwjgl-fmod")
+    implementation("org.lwjgl", "lwjgl-freetype")
     implementation("org.lwjgl", "lwjgl-glfw")
+    implementation("org.lwjgl", "lwjgl-harfbuzz")
     implementation("org.lwjgl", "lwjgl-jawt")
     implementation("org.lwjgl", "lwjgl-jemalloc")
+    implementation("org.lwjgl", "lwjgl-ktx")
     implementation("org.lwjgl", "lwjgl-libdivide")
     implementation("org.lwjgl", "lwjgl-llvm")
     implementation("org.lwjgl", "lwjgl-lmdb")
@@ -107,8 +111,11 @@ dependencies {
     implementation("org.lwjgl", "lwjgl-zstd")
     runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-assimp", classifier = lwjglNatives)
+    runtimeOnly("org.lwjgl", "lwjgl-freetype", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
+    runtimeOnly("org.lwjgl", "lwjgl-harfbuzz", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-jemalloc", classifier = lwjglNatives)
+    runtimeOnly("org.lwjgl", "lwjgl-ktx", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-libdivide", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-llvm", classifier = lwjglNatives)
     runtimeOnly("org.lwjgl", "lwjgl-lmdb", classifier = lwjglNatives)
