@@ -28,5 +28,5 @@ void createMemoryAllocator(const Device* pDev, MemoryAllocator* pAllocator)
 void destroyMemoryAllocator(MemoryAllocator* pAllocator)
 {
     vmaDestroyAllocator(pAllocator->vmaAllocator);
-    *pAllocator = (MemoryAllocator) {};
+    *pAllocator = (MemoryAllocator) {0};
 }

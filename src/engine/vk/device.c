@@ -41,12 +41,12 @@ static VkDevice _newLogicalDevice(const PhysicalDevice* phys)
     ecs_log_push();
     ecs_trace("Selected physical device %#p", phys);
     VkPhysicalDevice vkPhysicalDevice = phys->vkPhysicalDevice;
-    VkPhysicalDeviceFeatures features = {};
+    VkPhysicalDeviceFeatures features = {0};
     const VkQueueFamilyProperties* queueProps
         = phys->arrQueueFamilyProps;
 
     int nQueues = arrlen(queueProps);
-    VkDeviceQueueCreateInfo queueCI[nQueues];
+    VkDeviceQueueCreateInfo *queueCI = alloca(sizeof(*queueCI) * nQueues);
     for (int i = 0; i < nQueues; ++i) {
         VkQueueFamilyProperties prop = queueProps[i];
         uint32_t qc = prop.queueCount;

@@ -49,4 +49,5 @@ int main()
     }
 
     cleanupGame(&game);
+    return 0;
 }

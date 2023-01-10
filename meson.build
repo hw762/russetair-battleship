@@ -1,17 +1,24 @@
 project('russetair-battleship', 'c', 'cpp',
   version : '0.1',
-  default_options : ['warning_level=3', 'c_std=gnu17', 'cpp_std=c++17'])
+  default_options : [
+    'warning_level=3',
+    'c_std=gnu17',
+    'cpp_std=c++17',
+    'default_library=static',
+    ])
 
 cc = meson.get_compiler('c')
 
-add_global_arguments([
-  '-Werror=incompatible-pointer-types',
-  '-Werror=uninitialized',
-  '-Werror=return-type',
-  '-Wno-missing-field-initializers',
-  '-Wno-newline-eof',
-  '-Wno-nullability-extension'
-  ], language: 'c')
+if cc.get_id() != 'msvc'
+  add_global_arguments([
+    '-Werror=incompatible-pointer-types',
+    '-Werror=uninitialized',
+    '-Werror=return-type',
+    '-Wno-missing-field-initializers',
+    '-Wno-newline-eof',
+    '-Wno-nullability-extension'
+    ], language: 'c')
+endif
 
 add_global_arguments([
   '-DNK_INCLUDE_FIXED_TYPES',
@@ -33,13 +40,14 @@ cglm_dep = dependency('cglm')
 gfx_deps = [vulkan_dep, sdl2_dep, cglm_dep]
 
 # Assimp model loader
-assimp_dep = dependency('assimp')
+assimp_sp = cmake.subproject('assimp')
+assimp_dep = assimp_sp.dependency('assimp')
 
 # Others
 m_dep = cc.find_library('m', required : false)
 
 subdir('src/engine')
-flecs_subproject = subproject('flecs', default_options: ['default_library=static'])
+flecs_subproject = subproject('flecs', default_options: ['default_library=static', 'warning_level=0'])
 flecs_dep = flecs_subproject.get_variable('flecs_dep')
 thirdparty_src = files(
   'thirdparty/stb/stb.c',
@@ -55,7 +63,7 @@ thirdparty_inc = include_directories([
 ])
 
 exe = executable('c_battleship', [
-    'main.c', 
+    'main.c',
     engine_src,
     thirdparty_src
   ],

@@ -37,5 +37,5 @@ void createFramebuffer(const FramebufferCreateInfo* pCreateInfo, Framebuffer* pF
 void destroyFramebuffer(Framebuffer* pFramebuffer)
 {
     vkDestroyFramebuffer(pFramebuffer->pDevice->vkDevice, pFramebuffer->vkFramebuffer, NULL);
-    *pFramebuffer = (Framebuffer) {};
+    *pFramebuffer = (Framebuffer) {0};
 }

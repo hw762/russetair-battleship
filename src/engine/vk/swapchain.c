@@ -43,7 +43,7 @@ _calcSurfaceFormat(VkPhysicalDevice phys, VkSurfaceKHR surface)
     if (count == 0) {
         ecs_abort(1, "No surface format retrieved");
     }
-    VkSurfaceFormatKHR formats[count];
+    VkSurfaceFormatKHR *formats = alloca(sizeof(*formats) * count);
     vkIfFailed(vkGetPhysicalDeviceSurfaceFormatsKHR(phys, surface, &count, formats))
     {
         ecs_abort(1, "Failed to get surface formats");

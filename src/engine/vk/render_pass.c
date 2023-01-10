@@ -49,5 +49,5 @@ void createDefaultRenderPass(const RenderPassCreateInfo* pCreateInfo, RenderPass
 void destroyRenderPass(RenderPass* renderPass)
 {
     vkDestroyRenderPass(renderPass->pDevice->vkDevice, renderPass->vkRenderPass, NULL);
-    *renderPass = (RenderPass) {};
+    *renderPass = (RenderPass) {0};
 }

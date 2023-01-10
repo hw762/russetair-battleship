@@ -28,7 +28,7 @@ void createPipelineCache(const Device* pDevice, PipelineCache* pPipelineCache)
 void destroyPipelineCache(PipelineCache* pPipelineCache)
 {
     vkDestroyPipelineCache(pPipelineCache->pDevice->vkDevice, pPipelineCache->vkPipelineCache, NULL);
-    *pPipelineCache = (PipelineCache) {};
+    *pPipelineCache = (PipelineCache) {0};
 }
 
 void createPipeline(const PipelineCreateInfo* pCreateInfo, Pipeline* pPipeline)
