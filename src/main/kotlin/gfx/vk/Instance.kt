@@ -3,6 +3,7 @@ package hw762.russetair.vk
 import hw762.russetair.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.GLFWVulkan
+import org.lwjgl.glfw.GLFWVulkan.Functions.VulkanSupported
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.*
@@ -45,7 +46,11 @@ class Instance(val validate: Boolean) {
             }
             // GLFW extensions
             val glfwExtensions = GLFWVulkan.glfwGetRequiredInstanceExtensions()
-                ?: throw RuntimeException("Failed to find the GLFW platform surface extensions")
+                ?: if (VulkanSupported == 0.toLong()) {
+                    throw RuntimeException("Failed to find Vulkan")
+                } else {
+                    throw RuntimeException("Failed to find the GLFW platform surface extensions")
+                }
             val requiredExtensions: PointerBuffer
             if (supportsValidation) {
                 val vkDebugUtilsExtension = stack.UTF8(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
@@ -77,7 +82,10 @@ class Instance(val validate: Boolean) {
             // Instantiate debug extension
             vkDebugHandle = if (supportsValidation) {
                 val longBuff = stack.mallocLong(1)
-                vkCheck(vkCreateDebugUtilsMessengerEXT(vkInstance, debugUtils!!, null, longBuff), "Error creating debug utils")
+                vkCheck(
+                    vkCreateDebugUtilsMessengerEXT(vkInstance, debugUtils!!, null, longBuff),
+                    "Error creating debug utils"
+                )
                 longBuff.get(0)
             } else {
                 VK_NULL_HANDLE
