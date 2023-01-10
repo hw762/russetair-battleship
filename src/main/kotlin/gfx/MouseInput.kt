@@ -1,4 +1,4 @@
-package hw762.russetair.gfx
+package gfx
 
 import org.joml.Vector2f
 import org.lwjgl.glfw.GLFW.*

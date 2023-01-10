@@ -1,4 +1,4 @@
-package hw762.russetair.gfx
+package gfx
 
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported
