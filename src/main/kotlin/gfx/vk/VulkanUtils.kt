@@ -1,11 +1,8 @@
-package hw762.russetair.vk
+package gfx.vk
 
-import org.joml.Matrix4f
 import org.lwjgl.PointerBuffer
 import org.lwjgl.system.MemoryStack
-import org.lwjgl.system.MemoryUtil
-import org.lwjgl.vulkan.VK13.*
-import org.lwjgl.vulkan.VkCommandBuffer
+import org.lwjgl.vulkan.VK13.VK_SUCCESS
 
 class VulkanUtils {
     companion object {

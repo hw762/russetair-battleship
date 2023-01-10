@@ -1,7 +1,7 @@
-package hw762.russetair.vk
+package gfx.vk
 
-import hw762.russetair.vk.VulkanUtils.Companion.stringsToPointerBuffer
-import hw762.russetair.vk.VulkanUtils.Companion.vkCheck
+import gfx.vk.VulkanUtils.Companion.stringsToPointerBuffer
+import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.GLFWVulkan
 import org.lwjgl.glfw.GLFWVulkan.Functions.VulkanSupported
@@ -9,9 +9,9 @@ import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.EXTDebugUtils.*
-import org.lwjgl.vulkan.KHRPortabilitySubset.*
 import org.lwjgl.vulkan.KHRPortabilityEnumeration.*
-import org.lwjgl.vulkan.VK13.*
+import org.lwjgl.vulkan.VK10.*
+import org.lwjgl.vulkan.VK13.VK_API_VERSION_1_3
 import org.tinylog.kotlin.Logger
 
 class Instance(val validate: Boolean) {
