@@ -145,7 +145,10 @@ void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstan
         .ppEnabledExtensionNames = extensions,
         .enabledLayerCount = arrlenu(layers),
         .ppEnabledLayerNames = layers,
+#ifdef __APPLE__
         .flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+#else
+#endif
         .pNext = &_debug_utils_messenger_create_info_ext
     };
     vkIfFailed(vkCreateInstance(&ci, NULL, &pInstance->vkInstance))
@@ -161,5 +164,5 @@ void createInstance(const InstanceCreationInfo* pCreationInfo, Instance* pInstan
 void destroyInstance(Instance* pInstance)
 {
     vkDestroyInstance(pInstance->vkInstance, NULL);
-    *pInstance = (Instance) {0};
+    *pInstance = (Instance) { 0 };
 }

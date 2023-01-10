@@ -7,10 +7,12 @@
 typedef struct GuiRendererCreateInfo {
     VkDevice device;
     VmaAllocator allocator;
+    VkPipelineCache pipelineCache;
     VkCommandBuffer cmdBuffer;
     VkQueue queue;
     uint32_t width;
     uint32_t height;
+    VkFormat format;
 } GuiRendererCreateInfo;
 
 typedef struct GuiRenderer_T* GuiRenderer;

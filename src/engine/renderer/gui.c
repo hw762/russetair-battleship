@@ -19,9 +19,10 @@ struct NkVertex {
 };
 
 struct GuiRenderer_T {
-    struct nk_context ctx;
     VkDevice device;
     VmaAllocator allocator;
+    VkPipelineCache pipelineCache;
+    struct nk_context ctx;
     // Fonts
     struct nk_font_atlas atlas;
     VkImage fontAtlasImage;
@@ -34,6 +35,8 @@ struct GuiRenderer_T {
     VmaAllocation verticesBufferAlloc;
     VkBuffer elementsBuffer;
     VmaAllocation elementsBufferAlloc;
+    //
+    VkRenderPass renderPass;
     //
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
@@ -215,6 +218,53 @@ static void _initCtx(const GuiRendererCreateInfo* pInfo, GuiRenderer renderer)
     nk_init_default(&ctx, &font->handle);
 }
 
+static void _initRenderPass(const GuiRendererCreateInfo* pInfo, GuiRenderer r)
+{
+    VkAttachmentDescription attachments[1] = {
+        { .format = pInfo->format,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+    };
+    VkAttachmentReference colorReference = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+    VkSubpassDependency subpassDependencies[1] = {
+        (VkSubpassDependency) {
+            .srcSubpass = VK_SUBPASS_EXTERNAL,
+            .dstSubpass = 0,
+            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = 0,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+                | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+
+        }
+    };
+    VkSubpassDescription subpassDescription = {
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .inputAttachmentCount = 0,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorReference,
+    };
+    VkRenderPassCreateInfo ci = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = attachments,
+        .subpassCount = 1,
+        .pSubpasses = &subpassDescription,
+        .dependencyCount = 1,
+        .pDependencies = subpassDependencies,
+    };
+    vkCheck(vkCreateRenderPass(r->device, &ci, NULL, &r->renderPass),
+        "Failed to create render pass");
+}
+
 static void _initBuffers(const GuiRendererCreateInfo* pInfo, GuiRenderer renderer)
 {
     nk_buffer_init_default(&renderer->cmds);
@@ -294,10 +344,91 @@ static void _initPipeline(const GuiRendererCreateInfo* pInfo, GuiRenderer r)
     vkCheck(vkCreatePipelineLayout(r->device, &plCI, NULL, &r->pipelineLayout),
         "Failed to create pipeline layout");
 
+    VkPipelineInputAssemblyStateCreateInfo piasCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .primitiveRestartEnable = VK_FALSE,
+    };
+    VkPipelineRasterizationStateCreateInfo prsCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .polygonMode = VK_POLYGON_MODE_FILL,
+        .cullMode = VK_CULL_MODE_NONE,
+        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .lineWidth = 1.0f,
+    };
+    VkPipelineColorBlendAttachmentState pcbas = {
+        .blendEnable = VK_TRUE,
+        .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .colorBlendOp = VK_BLEND_OP_ADD,
+        .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .alphaBlendOp = VK_BLEND_OP_ADD,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+            | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+    };
+    VkPipelineColorBlendStateCreateInfo pcbsCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &pcbas,
+    };
+
+    VkPipelineViewportStateCreateInfo pvsCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .viewportCount = 1,
+        .scissorCount = 1,
+    };
+    VkPipelineMultisampleStateCreateInfo pmssCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+    };
+
+    VkDynamicState dynStates[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineDynamicStateCreateInfo pdsCI = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+        .dynamicStateCount = 2,
+        .pDynamicStates = dynStates,
+    };
+    /// TODO: create shaders
+    VkPipelineShaderStageCreateInfo shaderStages[2];
+    VkVertexInputBindingDescription vertexInputInfo[1] = {
+        { 0, sizeof(struct NkVertex), VK_VERTEX_INPUT_RATE_VERTEX }
+    };
+    VkVertexInputAttributeDescription vertexAttrDesc[3] = {
+        { 0, 0, VK_FORMAT_R32G32_SFLOAT, NK_OFFSETOF(struct NkVertex, position) },
+        { 1, 0, VK_FORMAT_R32G32_SFLOAT, NK_OFFSETOF(struct NkVertex, uv) },
+        { 2, 0, VK_FORMAT_R8G8B8A8_UINT, NK_OFFSETOF(struct NkVertex, rgba) },
+    };
+    VkPipelineVertexInputStateCreateInfo vertexInput = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = vertexInputInfo,
+        .vertexAttributeDescriptionCount = 2,
+        .pVertexAttributeDescriptions = vertexAttrDesc,
+    };
+
     // Create Pipeline
     VkGraphicsPipelineCreateInfo ci = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .stageCount = 2,
+        .pStages = shaderStages,
+        .pVertexInputState = &vertexInput,
+        .pInputAssemblyState = &piasCI,
+        .pViewportState = &pvsCI,
+        .pRasterizationState = &prsCI,
+        .pMultisampleState = &pmssCI,
+        .pColorBlendState = &pcbsCI,
+        .pDynamicState = &pdsCI,
+        .layout = r->pipelineLayout,
+        .renderPass = r->renderPass,
+        .basePipelineIndex = -1,
+        .basePipelineHandle = VK_NULL_HANDLE,
     };
+
+    vkCheck(vkCreateGraphicsPipelines(r->device, pInfo->pipelineCache, 1, &ci, NULL, &r->pipeline),
+        "Failed to create pipeline");
+    vkDestroyShaderModule(r->device, shaderStages[0].module, NULL);
+    vkDestroyShaderModule(r->device, shaderStages[1].module, NULL);
 }
 
 void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRenderer)
@@ -311,11 +442,13 @@ void createGuiRenderer(const GuiRendererCreateInfo* pInfo, GuiRenderer* pRendere
     *renderer = (struct GuiRenderer_T) {
         .device = pInfo->device,
         .allocator = pInfo->allocator,
+        .pipelineCache = pInfo->pipelineCache,
     };
 
     _initCtx(pInfo, renderer);
     _initBuffers(pInfo, renderer);
     _initDescriptorSets(pInfo, renderer);
+    _initRenderPass(pInfo, renderer);
     _initPipeline(pInfo, renderer);
 
     // Output

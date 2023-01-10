@@ -91,10 +91,12 @@ ecs_entity_t createGraphicsSystem(ecs_world_t* ecs)
         GuiRendererCreateInfo guiCI = {
             .device = system.renderDevice.vkDevice,
             .allocator = system.renderDevice.allocator.vmaAllocator,
+            .pipelineCache = NULL,
             .cmdBuffer = cmdBuf.handle,
             .queue = presentQueue.handle,
             .width = swapchain.extent.width,
             .height = swapchain.extent.height,
+            .format = swapchain.format.imageFormat,
         };
         createGuiRenderer(&guiCI, &guiRenderer);
         freeCommandBuffer(&cmdBuf);
