@@ -8,4 +8,3 @@
  */
 
 rootProject.name = "russetair-battleship"
-include("app")
