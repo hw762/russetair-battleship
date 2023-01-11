@@ -3,6 +3,7 @@ package gfx.vk
 import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.vulkan.VK10
+import org.lwjgl.vulkan.VK10.*
 import org.lwjgl.vulkan.VK13
 import org.lwjgl.vulkan.VkDescriptorPoolCreateInfo
 import org.lwjgl.vulkan.VkDescriptorPoolSize
@@ -24,12 +25,12 @@ class DescriptorPool(val device: Device, descriptorTypeCounts: List<DescriptorTy
             }
             val dpCI = VkDescriptorPoolCreateInfo.calloc(stack)
                 .`sType$Default`()
-                .flags(VK13.VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
+                .flags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
                 .pPoolSizes(typeCounts)
                 .maxSets(maxSets)
             val pDescriptorPool = stack.mallocLong(1)
             vkCheck(
-                VK13.vkCreateDescriptorPool(device.vkDevice, dpCI, null, pDescriptorPool),
+                vkCreateDescriptorPool(device.vkDevice, dpCI, null, pDescriptorPool),
                 "Failed to create descriptor pool")
             vkDescriptorPool = pDescriptorPool[0]
         }
@@ -46,7 +47,7 @@ class DescriptorPool(val device: Device, descriptorTypeCounts: List<DescriptorTy
     }
     fun cleanup() {
         Logger.debug("Destroying descriptor pool")
-        VK13.vkDestroyDescriptorPool(device.vkDevice, vkDescriptorPool, null)
+        vkDestroyDescriptorPool(device.vkDevice, vkDescriptorPool, null)
     }
     data class DescriptorTypeCount(val count: Int, val descriptorType: Int)
 }

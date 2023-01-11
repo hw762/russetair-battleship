@@ -8,9 +8,13 @@ import org.lwjgl.util.shaderc.Shaderc
 import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.VK10.*
 
-class NuklearPipeline(private val device: Device, private val pipelineCache: PipelineCache) {
-    val vertexShader: ShaderProgram
-    val fragmentShader: ShaderProgram
+class NuklearPipeline(private val device: Device,
+                      private val pipelineCache: PipelineCache,
+                      colorFormat: Int) {
+    val vkPipeline: Long
+    private val vertexShader: ShaderProgram
+    private val fragmentShader: ShaderProgram
+    private val renderPass = NuklearRenderPass(device, colorFormat)
 
     init {
         ShaderCompiler.compileShaderIfChanged(NK_VERTEX_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_vertex_shader)
@@ -98,13 +102,21 @@ class NuklearPipeline(private val device: Device, private val pipelineCache: Pip
                 .pMultisampleState(multisampleStateCI)
                 .pColorBlendState(colorBlendState)
                 .pDynamicState(dynamicStateCI)
-                .renderPass(renderPass)
+                .renderPass(renderPass.vkRenderPass)
             val lp = stack.mallocLong(1)
             vkCheck(
                 vkCreateGraphicsPipelines(device.vkDevice, pipelineCache.vkPipelineCache, pipelineCIs, null, lp),
                 "Failed to create pipeline"
             );
+            vkPipeline = lp[0]
         }
+    }
+
+    fun cleanup() {
+        vertexShader.cleanup()
+        fragmentShader.cleanup()
+        renderPass.cleanup()
+        vkDestroyPipeline(device.vkDevice, vkPipeline, null)
     }
 
     companion object {
