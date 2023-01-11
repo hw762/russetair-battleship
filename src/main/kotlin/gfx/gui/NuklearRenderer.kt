@@ -9,7 +9,6 @@ import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.MemoryUtil.nmemAllocChecked
 import org.lwjgl.system.MemoryUtil.nmemFree
-import org.lwjgl.util.shaderc.Shaderc
 import org.lwjgl.util.vma.*
 import org.lwjgl.util.vma.Vma.*
 import org.lwjgl.vulkan.VK10.*
@@ -38,6 +37,8 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
     private val textureDescriptorSetLayout = DescriptorSetLayout.SimpleDescriptorSetLayout(
         device, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, VK_SHADER_STAGE_FRAGMENT_BIT
     )
+    private val vkSampler: Long
+
     private val pipeline = NuklearPipeline(device, pipelineCache, colorFormat)
 
     init {
@@ -50,23 +51,40 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
                 .type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                 .descriptorCount(MAX_TEXTURES)
 
-            val ci = VkDescriptorPoolCreateInfo.calloc(stack)
+            val descriptorPoolCI = VkDescriptorPoolCreateInfo.calloc(stack)
                 .`sType$Default`()
                 .maxSets(MAX_TEXTURES + 1)
                 .pPoolSizes(poolSizes)
             val lp = stack.mallocLong(1)
             vkCheck(
-                vkCreateDescriptorPool(device.vkDevice, ci, null, lp),
+                vkCreateDescriptorPool(device.vkDevice, descriptorPoolCI, null, lp),
                 "Failed to create descriptor pool"
             )
             vkDescriptorPool = lp[0]
+
+            val samplerCI = VkSamplerCreateInfo.calloc(stack)
+                .`sType$Default`()
+                .magFilter(VK_FILTER_NEAREST)
+                .minFilter(VK_FILTER_NEAREST)
+                .mipmapMode(VK_SAMPLER_MIPMAP_MODE_NEAREST)
+                .addressModeU(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                .addressModeV(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+                .addressModeW(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
+            vkCheck(vkCreateSampler(device.vkDevice, samplerCI, null, lp),
+                "Failed to create sampler")
+            vkSampler = lp[0]
         }
     }
 
     fun cleanup() {
         vertices.cleanup()
         elements.cleanup()
+        nullTexture.free()
+        defaultFont.free()
         nk_buffer_free(cmds)
+        vkDestroyDescriptorPool(device.vkDevice, vkDescriptorPool, null)
+        vkDestroySampler(device.vkDevice, vkSampler, null)
+        pipeline.cleanup()
     }
 
     fun render(cmdBuf: VkCommandBuffer) {
@@ -80,6 +98,8 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
             nk_clear(ctx)
             nk_buffer_clear(cmds)
             vkEndCommandBuffer(cmdBuf)
+            vkCheck(vkResetDescriptorPool(device.vkDevice, vkDescriptorPool, 0),
+                "Failed to reset descriptor pool")
         }
     }
 
@@ -131,16 +151,16 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
                 vkCheck(vkAllocateDescriptorSets(device.vkDevice, descriptorSetCIs, descriptorSets),
                     "Failed to allocate descriptor set")
                 val descriptorImageInfo = VkDescriptorImageInfo.calloc(1, stack)
-                    .sampler(sampler)
+                    .sampler(vkSampler)
                     .imageView(tex)
                     .imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                val writeInfo = VkWriteDescriptorSet.calloc(stack)
+                val writeInfo = VkWriteDescriptorSet.calloc(1, stack)
                     .`sType$Default`()
                     .dstSet(descriptorSets[0])
                     .dstBinding(0)
                     .descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                     .pImageInfo(descriptorImageInfo)
-
+                vkUpdateDescriptorSets(device.vkDevice, writeInfo, null)
                 vkCmdBindDescriptorSets(
                     cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, textureDescriptorSetLayout.vkDescriptorLayout,
                     0, descriptorSets, null
