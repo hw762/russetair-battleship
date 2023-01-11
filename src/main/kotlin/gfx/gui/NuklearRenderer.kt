@@ -43,24 +43,9 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
 
     init {
         MemoryStack.stackPush().use { stack ->
-            val poolSizes = VkDescriptorPoolSize.calloc(2, stack)
-            poolSizes[0]
-                .type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-                .descriptorCount(1)
-            poolSizes[1]
-                .type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-                .descriptorCount(MAX_TEXTURES)
+            nk_init(ctx, ALLOCATOR, null)
 
-            val descriptorPoolCI = VkDescriptorPoolCreateInfo.calloc(stack)
-                .`sType$Default`()
-                .maxSets(MAX_TEXTURES + 1)
-                .pPoolSizes(poolSizes)
-            val lp = stack.mallocLong(1)
-            vkCheck(
-                vkCreateDescriptorPool(device.vkDevice, descriptorPoolCI, null, lp),
-                "Failed to create descriptor pool"
-            )
-            vkDescriptorPool = lp[0]
+            vkDescriptorPool = createDescriptorPool(stack, device)
 
             val samplerCI = VkSamplerCreateInfo.calloc(stack)
                 .`sType$Default`()
@@ -191,5 +176,25 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
             .position(3).attribute(NK_VERTEX_ATTRIBUTE_COUNT).format(NK_FORMAT_COUNT).offset(0)
             .flip();
 
+        fun createDescriptorPool(stack: MemoryStack, device: Device): Long {
+            val poolSizes = VkDescriptorPoolSize.calloc(2, stack)
+            poolSizes[0]
+                .type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                .descriptorCount(1)
+            poolSizes[1]
+                .type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                .descriptorCount(MAX_TEXTURES)
+
+            val descriptorPoolCI = VkDescriptorPoolCreateInfo.calloc(stack)
+                .`sType$Default`()
+                .maxSets(MAX_TEXTURES + 1)
+                .pPoolSizes(poolSizes)
+            val lp = stack.mallocLong(1)
+            vkCheck(
+                vkCreateDescriptorPool(device.vkDevice, descriptorPoolCI, null, lp),
+                "Failed to create descriptor pool"
+            )
+            return lp[0]
+        }
     }
 }
