@@ -9,7 +9,8 @@ import org.lwjgl.util.vma.VmaAllocationCreateInfo
 import org.lwjgl.vulkan.VK10.VK_SHARING_MODE_EXCLUSIVE
 import org.lwjgl.vulkan.VkBufferCreateInfo
 
-class VulkanBuffer(device: Device, size: Long, bufferUsage: Int, memoryUsage: Int, requiredFlags: Int) {
+class VulkanBuffer(device: Device, size: Long, bufferUsage: Int,
+                   vmaMemoryUsage: Int, vmaAllocRequiredFlags: Int) {
     val allocation: Long
     val buffer: Long
     val device: Device
@@ -28,10 +29,11 @@ class VulkanBuffer(device: Device, size: Long, bufferUsage: Int, memoryUsage: In
                 .usage(bufferUsage)
                 .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
             val allocInfo = VmaAllocationCreateInfo.calloc(stack)
-                .requiredFlags(requiredFlags)
-                .usage(memoryUsage)
+                .requiredFlags(vmaAllocRequiredFlags)
+                .usage(vmaMemoryUsage)
             val pAllocation = stack.callocPointer(1)
             val lp = stack.mallocLong(1)
+            // TODO: support MAPPED bit to map on create
             vkCheck(
                 Vma.vmaCreateBuffer(
                     device.memoryAllocator.vmaAllocator, bufferCreateInfo, allocInfo, lp,
