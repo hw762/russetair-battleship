@@ -17,7 +17,7 @@ class VulkanTexture(
     private val device: Device,
     val width: Int, val height: Int, val channels: Int, val format: Int,
     val mipLevels: Int, val arrayLayers: Int, val samples: Int, val tiling: Int
-) {
+) : UploadActivity {
     val vkImage: Long
     val vmaAlloc: Long
     var loaded: Boolean = false
@@ -56,14 +56,14 @@ class VulkanTexture(
     }
 
     fun cleanup() {
-        finalizeUpdateAfterSubmit()
+        cleanupStagingBuffer()
         vmaDestroyImage(device.memoryAllocator.vmaAllocator, vkImage, vmaAlloc)
     }
 
     /**
      * Allocate and map staging buffer
      */
-    fun prepareUpdate() {
+    fun prepareStagingBuffer() {
         assert(!loaded) { "Texture already loaded" }
         loaded = false
         if (stagingBuf != null) {
@@ -89,7 +89,7 @@ class VulkanTexture(
         stagingBuf!!.unmap()
     }
 
-    fun recordUpdate(cmdBuf: VkCommandBuffer) {
+    override fun recordUpload(cmdBuf: VkCommandBuffer) {
         MemoryStack.stackPush().use { stack ->
             val barrier = VkImageMemoryBarrier.calloc(1, stack)
                 .`sType$Default`()
@@ -140,7 +140,11 @@ class VulkanTexture(
     /**
      * Finalize after record
      */
-    fun finalizeUpdateAfterSubmit() {
+    override fun finalizeAfterUpload() {
+        cleanupStagingBuffer()
+    }
+
+    private fun cleanupStagingBuffer() {
         if (stagingBuf == null) {
             return
         }

@@ -1,16 +1,17 @@
 package gfx.gui
 
 import gfx.vk.*
+import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.nuklear.*
 import org.lwjgl.nuklear.Nuklear.*
-import org.lwjgl.stb.STBTruetype.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.vma.Vma
 import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.VK10.*
 
-class NuklearState(private val device: Device) : CommandRecordable {
+class NuklearState(private val device: Device) :
+    RenderActivity, UploadActivity {
     private val ctx = NkContext.create()
     private val defaultFont = NuklearFont(device, DEFAULT_FONT, 18.0f, FONT_BITMAP_W, FONT_BITMAP_H)
     private val cmds = NkBuffer.create()
@@ -26,6 +27,7 @@ class NuklearState(private val device: Device) : CommandRecordable {
         device, MAX_ELEMENT_BUFFER, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         Vma.VMA_MEMORY_USAGE_AUTO, Vma.VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
     )
+
     private val vkDescriptorPool: Long
     private val projMatDescriptorSetLayout = DescriptorSetLayout.SimpleDescriptorSetLayout(
         device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, VK_SHADER_STAGE_VERTEX_BIT
@@ -33,6 +35,9 @@ class NuklearState(private val device: Device) : CommandRecordable {
     private val textureDescriptorSetLayout = DescriptorSetLayout.SimpleDescriptorSetLayout(
         device, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, VK_SHADER_STAGE_FRAGMENT_BIT
     )
+
+    /// A mapping from VkImageView to VkDescriptorSet. Cleared every frame.
+    private val boundTextures = HashMap<Long, Long>()
 
     init {
         nk_init(ctx, ALLOCATOR, defaultFont.nkFont)
@@ -53,7 +58,7 @@ class NuklearState(private val device: Device) : CommandRecordable {
             .addressModeU(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
             .addressModeV(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
             .addressModeW(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-        VulkanUtils.vkCheck(
+        vkCheck(
             vkCreateSampler(device.vkDevice, samplerCI, null, lp),
             "Failed to create sampler"
         )
@@ -75,10 +80,9 @@ class NuklearState(private val device: Device) : CommandRecordable {
     /**
      * Convert and write Nuklear commands into vertex and index buffer.
      */
-    private fun convertCmds() {
+    private fun writeVerticesIndicesBuffer() {
         val vertBuf = MemoryUtil.memByteBuffer(vertices.map(), vertices.requestedSize.toInt())
         val elemBuf = MemoryUtil.memByteBuffer(elements.map(), elements.requestedSize.toInt())
-
         MemoryStack.stackPush().use { stack ->
             val config = NkConvertConfig.calloc(stack)
                 .global_alpha(1.0f)
@@ -97,46 +101,81 @@ class NuklearState(private val device: Device) : CommandRecordable {
             nk_buffer_init_fixed(ebuf, elemBuf)
             nk_convert(ctx, cmds, vbuf, ebuf, config)
         }
-
         vertices.unmap()
         elements.unmap()
     }
 
-    fun uploadTextures(cmdBuf: VkCommandBuffer) {
+    /**
+     * Binds a texture to descriptor set and returns the VkDescriptorSet handle.
+     * If already bound, return existing descriptor set.
+     */
+    private fun textureDescriptorSet(vkImageView: Long): Long {
+        val existing = boundTextures[vkImageView]
+        if (existing != null) {
+            return existing
+        }
+        MemoryStack.stackPush().use { stack ->
+            // Allocate descriptor set
+            val pLayouts = stack.mallocLong(1)
+            pLayouts.put(0, textureDescriptorSetLayout.vkDescriptorLayout)
+            val descriptorSetAI = VkDescriptorSetAllocateInfo.calloc(stack)
+                .`sType$Default`()
+                .descriptorPool(vkDescriptorPool)
+                .pSetLayouts(pLayouts)
+            val lp = stack.mallocLong(1)
+            vkCheck(vkAllocateDescriptorSets(device.vkDevice, descriptorSetAI, lp),
+                "Failed to allocate descriptor set")
+            val vkDescriptorSet = lp[0]
+            boundTextures[vkImageView] = vkDescriptorSet
+            // Write descriptor set
+            val descriptorImageInfo = VkDescriptorImageInfo.calloc(1, stack)
+                .sampler(vkSampler)
+                .imageView(vkImageView)
+                .imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            val writeInfo = VkWriteDescriptorSet.calloc(1, stack)
+                .`sType$Default`()
+                .dstSet(vkDescriptorSet)
+                .dstBinding(0)
+                .descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                .pImageInfo(descriptorImageInfo)
+            vkUpdateDescriptorSets(device.vkDevice, writeInfo, null)
+
+            return vkDescriptorSet
+        }
+    }
+
+    private fun drawNuklearCommands(cmdBuf: VkCommandBuffer) {
         MemoryStack.stackPush().use { stack ->
             val lp = stack.mallocLong(1)
             lp.put(0, textureDescriptorSetLayout.vkDescriptorLayout)
             var cmd = nk__draw_begin(ctx, cmds)
+            var offset = 0
             while (cmd != null) {
                 if (cmd.elem_count() == 0)
                     continue
-                /// TODO: bind texture
-                val tex = cmd.texture().ptr()
-                val descriptorSetCIs = VkDescriptorSetAllocateInfo.calloc(stack)
-                    .`sType$Default`()
-                    .descriptorPool(vkDescriptorPool)
-                    .pSetLayouts(lp)
-                val descriptorSets = stack.mallocLong(1)
-                VulkanUtils.vkCheck(
-                    vkAllocateDescriptorSets(device.vkDevice, descriptorSetCIs, descriptorSets),
-                    "Failed to allocate descriptor set"
-                )
-                val descriptorImageInfo = VkDescriptorImageInfo.calloc(1, stack)
-                    .sampler(vkSampler)
-                    .imageView(tex)
-                    .imageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                val writeInfo = VkWriteDescriptorSet.calloc(1, stack)
-                    .`sType$Default`()
-                    .dstSet(descriptorSets[0])
-                    .dstBinding(0)
-                    .descriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-                    .pImageInfo(descriptorImageInfo)
-                vkUpdateDescriptorSets(device.vkDevice, writeInfo, null)
+                // Bind texture
+                val texView = cmd.texture().ptr()
+                val descriptorSet = textureDescriptorSet(texView)
+                val pDS = stack.mallocLong(1)
+                pDS.put(0, descriptorSet)
                 vkCmdBindDescriptorSets(
                     cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, textureDescriptorSetLayout.vkDescriptorLayout,
-                    0, descriptorSets, null
+                    0, pDS, null
                 )
-                //
+                // Draw TODO: display scaling
+                val scissors = VkRect2D.malloc(1, stack)
+                    .extent {it
+                        .width(cmd!!.clip_rect().w().toInt())
+                        .height(cmd!!.clip_rect().h().toInt())
+                    }
+                    .offset { it
+                        .x(cmd!!.clip_rect().x().toInt())
+                        .y(cmd!!.clip_rect().y().toInt())
+                    }
+                vkCmdSetScissor(cmdBuf, 0, scissors)
+                vkCmdDrawIndexed(cmdBuf, cmd.elem_count(), 1, offset, 0, 0)
+                // Advance and get next command
+                offset += cmd.elem_count()
                 cmd = nk__draw_next(cmd, cmds, ctx)
             }
         }
@@ -158,12 +197,12 @@ class NuklearState(private val device: Device) : CommandRecordable {
             .position(3).attribute(NK_VERTEX_ATTRIBUTE_COUNT).format(NK_FORMAT_COUNT).offset(0)
             .flip()
         private val ALLOCATOR: NkAllocator = NkAllocator.create()
-            .alloc { handle: Long, old: Long, size: Long ->
+            .alloc { _: Long, _: Long, size: Long ->
                 MemoryUtil.nmemAllocChecked(
                     size
                 )
             }
-            .mfree { handle: Long, ptr: Long -> MemoryUtil.nmemFree(ptr) }
+            .mfree { _: Long, ptr: Long -> MemoryUtil.nmemFree(ptr) }
 
         fun createDescriptorPool(stack: MemoryStack, device: Device): Long {
             val poolSizes = VkDescriptorPoolSize.calloc(2, stack)
@@ -179,7 +218,7 @@ class NuklearState(private val device: Device) : CommandRecordable {
                 .maxSets(MAX_TEXTURES + 1)
                 .pPoolSizes(poolSizes)
             val lp = stack.mallocLong(1)
-            VulkanUtils.vkCheck(
+            vkCheck(
                 vkCreateDescriptorPool(device.vkDevice, descriptorPoolCI, null, lp),
                 "Failed to create descriptor pool"
             )
@@ -187,12 +226,26 @@ class NuklearState(private val device: Device) : CommandRecordable {
         }
     }
 
-    override fun prepareRecord() {
+    override fun prepareRenderActivity() {
+        writeVerticesIndicesBuffer()
     }
 
-    override fun recordCommands(cmdBuf: VkCommandBuffer) {
+    override fun recordRenderActivity(cmdBuf: VkCommandBuffer) {
+        drawNuklearCommands(cmdBuf)
     }
 
-    override fun finalizeAfterSubmit() {
+    override fun finalizeRenderActivity() {
+        nk_clear(ctx)
+        nk_buffer_clear(cmds)
+        vkResetDescriptorPool(device.vkDevice, vkDescriptorPool, 0)
+        boundTextures.clear()
+    }
+
+    override fun recordUpload(cmdBuf: VkCommandBuffer) {
+        defaultFont.recordUpload(cmdBuf)
+    }
+
+    override fun finalizeAfterUpload() {
+        defaultFont.finalizeAfterUpload()
     }
 }
