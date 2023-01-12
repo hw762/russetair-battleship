@@ -10,6 +10,9 @@ import org.lwjgl.vulkan.VK10.*
 import org.tinylog.kotlin.Logger
 import java.nio.ByteBuffer
 
+/**
+ * A regular 2D image texture on a single queue
+ */
 class VulkanTexture(
     private val device: Device,
     val width: Int, val height: Int, val channels: Int, val format: Int,
@@ -53,14 +56,14 @@ class VulkanTexture(
     }
 
     fun cleanup() {
-        finalizeAfterSubmit()
+        finalizeUpdateAfterSubmit()
         vmaDestroyImage(device.memoryAllocator.vmaAllocator, vkImage, vmaAlloc)
     }
 
     /**
      * Allocate and map staging buffer
      */
-    fun prepareStagingBuffer() {
+    fun prepareUpdate() {
         assert(!loaded) { "Texture already loaded" }
         loaded = false
         if (stagingBuf != null) {
@@ -86,7 +89,7 @@ class VulkanTexture(
         stagingBuf!!.unmap()
     }
 
-    fun recordCommands(cmdBuf: VkCommandBuffer) {
+    fun recordUpdate(cmdBuf: VkCommandBuffer) {
         MemoryStack.stackPush().use { stack ->
             val barrier = VkImageMemoryBarrier.calloc(1, stack)
                 .`sType$Default`()
@@ -137,7 +140,7 @@ class VulkanTexture(
     /**
      * Finalize after record
      */
-    fun finalizeAfterSubmit() {
+    fun finalizeUpdateAfterSubmit() {
         if (stagingBuf == null) {
             return
         }
