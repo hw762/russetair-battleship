@@ -9,11 +9,14 @@ fun main() {
     val surface = Surface.create(physicalDevice, window.windowHandle)
     val device = Device(instance, physicalDevice)
     val swapchain = Swapchain(device, surface, window, 3, true)
+
     while (!window.shouldClose()) {
         window.pollEvents()
         if (window.isKeyPressed(GLFW.GLFW_KEY_ESCAPE)) {
             break // Exit
         }
+//        val resize = swapchain.acquireNextImage()
+//        swapchain.presentImage(device)
     }
     swapchain.cleanup()
     device.cleanup()

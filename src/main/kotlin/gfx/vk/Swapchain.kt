@@ -5,19 +5,20 @@ import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.vulkan.*
+import org.lwjgl.vulkan.VK10.VK_SUCCESS
 import org.tinylog.kotlin.Logger
+import java.nio.LongBuffer
 import kotlin.math.max
 import kotlin.math.min
 
 class Swapchain(device: Device, surface: Surface, window: Window, requestedImages: Int, vsync: Boolean) {
     val device: Device
-    val imageViews: Array<ImageView>
+    val frameInfo: Array<FrameInfo>
     val surfaceFormat: SurfaceFormat
     val swapChainExtent: VkExtent2D
     val vkSwapChain: Long
-    val syncSemaphoresList: Array<SyncSemaphores>
     var currentFrame: Int
-    val numImages: Int get() = imageViews.size
+    val numImages: Int get() = frameInfo.size
 
     init {
         Logger.debug("Creating Vulkan swapchain")
@@ -59,18 +60,15 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
                 "Failed to create swap chain"
             )
             vkSwapChain = lp[0]
-            imageViews = createImageViews(stack, device, vkSwapChain, surfaceFormat.imageFormat)
-            syncSemaphoresList = Array(numImages) {
-                SyncSemaphores.create(device)
-            }
+
+            frameInfo = createFrameInfos(stack, device, vkSwapChain, surfaceFormat.imageFormat)
             currentFrame = 0
         }
     }
 
     fun cleanup() {
         Logger.debug("Destroying Vulkan swapchain")
-        imageViews.forEach(ImageView::cleanup)
-        syncSemaphoresList.forEach(SyncSemaphores::cleanup)
+        frameInfo.forEach { it.cleanup() }
         KHRSwapchain.vkDestroySwapchainKHR(device.vkDevice, vkSwapChain, null)
     }
 
@@ -78,13 +76,15 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
         var resize = false
         MemoryStack.stackPush().use { stack ->
             val ip = stack.mallocInt(1)
-            val err = KHRSwapchain.vkAcquireNextImageKHR(device.vkDevice, vkSwapChain, 0.inv(),
-                syncSemaphoresList[currentFrame].imgAcquisitionSemaphore.vkSemaphore, MemoryUtil.NULL, ip)
+            val err = KHRSwapchain.vkAcquireNextImageKHR(
+                device.vkDevice, vkSwapChain, 0.inv(),
+                frameInfo[currentFrame].syncSemaphores.imgAcquisitionSemaphore.vkSemaphore, MemoryUtil.NULL, ip
+            )
             if (err == KHRSwapchain.VK_ERROR_OUT_OF_DATE_KHR) {
                 resize = true
             } else if (err == KHRSwapchain.VK_SUBOPTIMAL_KHR) {
-
-            } else if (err != VK13.VK_SUCCESS) {
+                resize = true
+            } else if (err != VK_SUCCESS) {
                 throw RuntimeException("Failed to acquire image: $err")
             }
             currentFrame = ip[0]
@@ -97,9 +97,11 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
         MemoryStack.stackPush().use { stack ->
             val present = VkPresentInfoKHR.calloc(stack)
                 .`sType$Default`()
-                .pWaitSemaphores(stack.longs(
-                    syncSemaphoresList[currentFrame].renderCompleteSemaphore.vkSemaphore
-                ))
+                .pWaitSemaphores(
+                    stack.longs(
+                        frameInfo[currentFrame].syncSemaphores.renderCompleteSemaphore.vkSemaphore
+                    )
+                )
                 .swapchainCount(1)
                 .pSwapchains(stack.longs(vkSwapChain))
                 .pImageIndices(stack.ints(currentFrame))
@@ -112,12 +114,28 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
                 throw RuntimeException("Failed to present KHR: $err")
             }
         }
-        currentFrame = (currentFrame + 1) % imageViews.size
+        currentFrame = (currentFrame + 1) % numImages
         return resize
     }
 
-    private fun createImageViews(stack: MemoryStack, device: Device, swapChain: Long, format: Int): Array<ImageView> {
-        val result: Array<ImageView>
+    private fun createFrameInfos(stack: MemoryStack, device: Device, swapChain: Long, format: Int): Array<FrameInfo> {
+        val swapChainImages = getSwapchainImages(stack, device, swapChain)
+        val numImages = swapChainImages.capacity()
+        val imageViewData = ImageView.Info().format(format).aspectMask(VK13.VK_IMAGE_ASPECT_COLOR_BIT)
+        return Array(numImages) {
+            FrameInfo(
+                swapChainImages[it],
+                ImageView.create(device, swapChainImages[it], imageViewData),
+                SyncSemaphores.create(device)
+            )
+        }
+    }
+
+    private fun getSwapchainImages(
+        stack: MemoryStack,
+        device: Device,
+        swapChain: Long
+    ): LongBuffer {
         val ip = stack.mallocInt(1)
         vkCheck(
             KHRSwapchain.vkGetSwapchainImagesKHR(device.vkDevice, swapChain, ip, null),
@@ -129,11 +147,7 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
             KHRSwapchain.vkGetSwapchainImagesKHR(device.vkDevice, swapChain, ip, swapChainImages),
             "Failed to get surface images"
         )
-        val imageViewData = ImageView.Info().format(format).aspectMask(VK13.VK_IMAGE_ASPECT_COLOR_BIT)
-        result = Array(numImages) {
-            ImageView.create(device, swapChainImages[it], imageViewData)
-        }
-        return result
+        return swapChainImages
     }
 
 
@@ -217,6 +231,7 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
             return result
         }
     }
+
     data class SurfaceFormat(val imageFormat: Int, val colorSpace: Int)
 
     data class SyncSemaphores(
@@ -227,10 +242,18 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
             imgAcquisitionSemaphore.cleanup()
             renderCompleteSemaphore.cleanup()
         }
+
         companion object {
             fun create(device: Device): SyncSemaphores {
-                return SyncSemaphores(Semaphore.create(device), Semaphore.create(device))
+                return SyncSemaphores(Semaphore.create(device), Semaphore.create(device, ))
             }
+        }
+    }
+
+    data class FrameInfo(val image: Long, val view: ImageView, val syncSemaphores: SyncSemaphores) {
+        fun cleanup() {
+            view.cleanup()
+            syncSemaphores.cleanup()
         }
     }
 }
