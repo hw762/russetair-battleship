@@ -30,26 +30,11 @@ class Instance(val validate: Boolean) {
                 .pEngineName(appShortName)
                 .engineVersion(0)
                 .apiVersion(VK_API_VERSION_1_3)
-            val validationLayers = getSupportedValidationLayers()
+            val validationLayers = Companion.getSupportedValidationLayers()
             val numValidationLayers = validationLayers.size
-            var supportsValidation = validate
-            if (validate && numValidationLayers == 0) {
-                supportsValidation = false
-                Logger.warn("Request validation but no supported validation layers found. Falling back to no validation")
-                Logger.debug("Validation: {}", supportsValidation)
-            }
+            val supportsValidation = Companion.checkForValidation(this, numValidationLayers, validate)
             // Set required layers
-            val requiredLayers: PointerBuffer?
-            if (supportsValidation) {
-                for (i in 0 until numValidationLayers) {
-                    Logger.debug("Using a validation layer [${validationLayers[i]}]")
-                }
-                val layers = validationLayers
-                requiredLayers = stringsToPointerBuffer(stack, layers)
-
-            } else {
-                requiredLayers = null
-            }
+            val requiredLayers: PointerBuffer? = Companion.getRequiredLayers(supportsValidation, validationLayers, stack)
             // GLFW extensions
             val glfwExtensions = GLFWVulkan.glfwGetRequiredInstanceExtensions()
                 ?: if (VulkanSupported == 0.toLong()) {
@@ -71,7 +56,7 @@ class Instance(val validate: Boolean) {
             // Setup debug callback
             var extension = MemoryUtil.NULL
             if (supportsValidation) {
-                debugUtils = createDebugCallback()
+                debugUtils = Companion.createDebugCallback()
                 extension = debugUtils.address()
             } else {
                 debugUtils = null
@@ -101,69 +86,6 @@ class Instance(val validate: Boolean) {
         }
     }
 
-    private fun createDebugCallback(): VkDebugUtilsMessengerCreateInfoEXT {
-        val result = VkDebugUtilsMessengerCreateInfoEXT
-            .calloc()
-            .`sType$Default`()
-            .messageSeverity(MESSAGE_SEVERITY_BITMASK)
-            .messageType(MESSAGE_TYPE_BITMASK)
-            .pfnUserCallback { messageSeverity, messageTypes, pCallbackData, pUserData ->
-                val callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData)
-                if ((messageSeverity and VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
-                    Logger.info("VkDebugUtilsCallback, {}", callbackData.pMessageString())
-                } else if ((messageSeverity and VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
-                    Logger.warn("VkDebugUtilsCallback, {}", callbackData.pMessageString())
-                } else if ((messageSeverity and VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
-                    Logger.error("VkDebugUtilsCallback, {}", callbackData.pMessageString())
-                } else {
-                    Logger.debug("VkDebugUtilsCallback, {}", callbackData.pMessageString())
-                }
-                VK_FALSE
-            }
-        return result
-    }
-
-    private fun getSupportedValidationLayers(): List<String> {
-        MemoryStack.stackPush().use { stack ->
-            // Query number of layers
-            val numLayersArr = stack.callocInt(1)
-            vkEnumerateInstanceLayerProperties(numLayersArr, null)
-            val numLayers = numLayersArr.get(0)
-            Logger.debug("Instance supports [{}] layers", numLayers)
-            // Then query the properties
-            val propsBuf = VkLayerProperties.calloc(numLayers, stack)
-            val supportedLayers = ArrayList<String>()
-            vkEnumerateInstanceLayerProperties(numLayersArr, propsBuf)
-            for (i in 0 until numLayers) {
-                val props = propsBuf.get(i)
-                val layerName = props.layerNameString()
-                supportedLayers.add(layerName)
-                Logger.debug("Supported layer [{}]", layerName)
-            }
-            // Select layers
-            val layersToUse = ArrayList<String>()
-            // Main layer
-            if (supportedLayers.contains("VK_LAYER_KHRONOS_validation")) {
-                layersToUse.add("VK_LAYER_KHRONOS_validation")
-                return layersToUse
-            }
-            // Fallback 1
-            if (supportedLayers.contains("VK_LAYER_LUNARG_standard_validation")) {
-                layersToUse.add("VK_LAYER_LUNARG_standard_validation")
-                return layersToUse
-            }
-            // Fallback 2
-            val requestedLayers = ArrayList<String>()
-            requestedLayers.add("VK_LAYER_GOOGLE_threading")
-            requestedLayers.add("VK_LAYER_LUNARG_parameter_validation")
-            requestedLayers.add("VK_LAYER_LUNARG_object_tracker")
-            requestedLayers.add("VK_LAYER_LUNARG_core_validation")
-            requestedLayers.add("VK_LAYER_GOOGLE_unique_objects")
-            val overlap = requestedLayers.stream().filter(supportedLayers::contains).toList()
-            return overlap
-        }
-    }
-
     fun cleanup() {
         Logger.debug("Destroying Vulkan instance")
         if (vkDebugHandle != VK_NULL_HANDLE) {
@@ -182,5 +104,95 @@ class Instance(val validate: Boolean) {
         const val MESSAGE_TYPE_BITMASK = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT or
                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT or
                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT
+
+        private fun getRequiredLayers(
+            supportsValidation: Boolean,
+            validationLayers: List<String>,
+            stack: MemoryStack
+        ): PointerBuffer? {
+            val requiredLayers: PointerBuffer?
+            if (supportsValidation) {
+                for (v in validationLayers) {
+                    Logger.debug("Using a validation layer [$v]")
+                }
+                requiredLayers = stringsToPointerBuffer(stack, validationLayers)
+
+            } else {
+                requiredLayers = null
+            }
+            return requiredLayers
+        }
+
+        private fun checkForValidation(instance: Instance, numValidationLayers: Int, requestsValidation: Boolean): Boolean {
+            var supportValidation = requestsValidation
+            if (instance.validate && numValidationLayers == 0) {
+                supportValidation = false
+                Logger.warn("Request validation but no supported validation layers found. Falling back to no validation")
+                Logger.debug("Validation: {}", supportValidation)
+            }
+            return supportValidation
+        }
+
+        private fun getSupportedValidationLayers(): List<String> {
+            MemoryStack.stackPush().use { stack ->
+                // Query number of layers
+                val numLayersArr = stack.callocInt(1)
+                vkEnumerateInstanceLayerProperties(numLayersArr, null)
+                val numLayers = numLayersArr.get(0)
+                Logger.debug("Instance supports [{}] layers", numLayers)
+                // Then query the properties
+                val propsBuf = VkLayerProperties.calloc(numLayers, stack)
+                val supportedLayers = ArrayList<String>()
+                vkEnumerateInstanceLayerProperties(numLayersArr, propsBuf)
+                for (i in 0 until numLayers) {
+                    val props = propsBuf.get(i)
+                    val layerName = props.layerNameString()
+                    supportedLayers.add(layerName)
+                    Logger.debug("Supported layer [{}]", layerName)
+                }
+                // Select layers
+                val layersToUse = ArrayList<String>()
+                // Main layer
+                if (supportedLayers.contains("VK_LAYER_KHRONOS_validation")) {
+                    layersToUse.add("VK_LAYER_KHRONOS_validation")
+                    return layersToUse
+                }
+                // Fallback 1
+                if (supportedLayers.contains("VK_LAYER_LUNARG_standard_validation")) {
+                    layersToUse.add("VK_LAYER_LUNARG_standard_validation")
+                    return layersToUse
+                }
+                // Fallback 2
+                val requestedLayers = ArrayList<String>()
+                requestedLayers.add("VK_LAYER_GOOGLE_threading")
+                requestedLayers.add("VK_LAYER_LUNARG_parameter_validation")
+                requestedLayers.add("VK_LAYER_LUNARG_object_tracker")
+                requestedLayers.add("VK_LAYER_LUNARG_core_validation")
+                requestedLayers.add("VK_LAYER_GOOGLE_unique_objects")
+                return requestedLayers.stream().filter(supportedLayers::contains).toList()
+            }
+        }
+
+        private fun createDebugCallback(): VkDebugUtilsMessengerCreateInfoEXT {
+            val result = VkDebugUtilsMessengerCreateInfoEXT
+                .calloc()
+                .`sType$Default`()
+                .messageSeverity(MESSAGE_SEVERITY_BITMASK)
+                .messageType(MESSAGE_TYPE_BITMASK)
+                .pfnUserCallback { messageSeverity, messageTypes, pCallbackData, pUserData ->
+                    val callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData)
+                    if ((messageSeverity and VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
+                        Logger.info("VkDebugUtilsCallback, {}", callbackData.pMessageString())
+                    } else if ((messageSeverity and VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
+                        Logger.warn("VkDebugUtilsCallback, {}", callbackData.pMessageString())
+                    } else if ((messageSeverity and VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
+                        Logger.error("VkDebugUtilsCallback, {}", callbackData.pMessageString())
+                    } else {
+                        Logger.debug("VkDebugUtilsCallback, {}", callbackData.pMessageString())
+                    }
+                    VK_FALSE
+                }
+            return result
+        }
     }
 }
