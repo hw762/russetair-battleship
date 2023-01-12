@@ -6,7 +6,7 @@ import org.lwjgl.vulkan.VK10.vkCreateSemaphore
 import org.lwjgl.vulkan.VK10.vkDestroySemaphore
 import org.lwjgl.vulkan.VkSemaphoreCreateInfo
 
-data class Semaphore(val device: Device, val vkSemaphore: Long) {
+class Semaphore private constructor(val device: Device, val vkSemaphore: Long) {
     fun cleanup() {
         vkDestroySemaphore(device.vkDevice, vkSemaphore, null)
     }

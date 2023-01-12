@@ -6,7 +6,7 @@ fun main() {
     val window = Window("Russetair Battleship")
     val instance = Instance(true)
     val physicalDevice = PhysicalDevice.createPhysicalDevice(instance)
-    val surface = Surface(physicalDevice, window.windowHandle)
+    val surface = Surface.create(physicalDevice, window.windowHandle)
     val device = Device(instance, physicalDevice)
     val swapchain = Swapchain(device, surface, window, 3, true)
     while (!window.shouldClose()) {
