@@ -3,45 +3,37 @@ package gfx.vk
 import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.vulkan.VK10.*
-import org.lwjgl.vulkan.VkComponentMapping
-import org.lwjgl.vulkan.VkImageSubresourceRange
 import org.lwjgl.vulkan.VkImageViewCreateInfo
 
-class ImageView(device: Device, vkImage: Long, imageViewData: ImageViewData) {
-    val device: Device
-    val vkImageView: Long
-    val aspectMask: Int
-    val mipLevels: Int
-    init {
-        this.device = device
-        this.aspectMask = imageViewData.aspectMask
-        this.mipLevels = imageViewData.mipLevels
-        MemoryStack.stackPush().use {stack ->
-            val lp = stack.mallocLong(1)
-            val viewCreateInfo = VkImageViewCreateInfo.calloc(stack)
-                .`sType$Default`()
-                .image(vkImage)
-                .viewType(imageViewData.viewType)
-                .format(imageViewData.format)
-                .subresourceRange {
-                    it.aspectMask(aspectMask)
-                        .baseMipLevel(0)
-                        .levelCount(mipLevels)
-                        .baseArrayLayer(imageViewData.baseArrayLayer)
-                        .layerCount(imageViewData.layerCount)
-                }
-            vkCheck(
-                vkCreateImageView(device.vkDevice, viewCreateInfo, null, lp),
-                "Failed to create image view")
-            vkImageView = lp[0]
+data class ImageView(val device: Device, val vkImageView: Long, val info: Info) {
+    companion object {
+        fun create(device: Device, vkImage: Long, info: Info): ImageView {
+            MemoryStack.stackPush().use {stack ->
+                val lp = stack.mallocLong(1)
+                val viewCreateInfo = VkImageViewCreateInfo.calloc(stack)
+                    .`sType$Default`()
+                    .image(vkImage)
+                    .viewType(info.viewType)
+                    .format(info.format)
+                    .subresourceRange {
+                        it.aspectMask(info.aspectMask)
+                            .baseMipLevel(0)
+                            .levelCount(info.mipLevels)
+                            .baseArrayLayer(info.baseArrayLayer)
+                            .layerCount(info.layerCount)
+                    }
+                vkCheck(
+                    vkCreateImageView(device.vkDevice, viewCreateInfo, null, lp),
+                    "Failed to create image view")
+                return ImageView(device, lp[0], info)
+            }
         }
     }
-
     fun cleanup() {
         vkDestroyImageView(device.vkDevice, vkImageView, null)
     }
 
-    class ImageViewData {
+    class Info {
         var aspectMask: Int
         var baseArrayLayer: Int
         var format: Int
@@ -57,27 +49,27 @@ class ImageView(device: Device, vkImage: Long, imageViewData: ImageViewData) {
             mipLevels = 1
             viewType = VK_IMAGE_VIEW_TYPE_2D
         }
-        fun aspectMask(aspectMask: Int): ImageViewData {
+        fun aspectMask(aspectMask: Int): Info {
             this.aspectMask = aspectMask
             return this
         }
-        fun baseArrayLayer(baseArrayLayer: Int): ImageViewData {
+        fun baseArrayLayer(baseArrayLayer: Int): Info {
             this.baseArrayLayer = baseArrayLayer
             return this
         }
-        fun format(format: Int): ImageViewData {
+        fun format(format: Int): Info {
             this.format = format
             return this
         }
-        fun layerCount(layerCount: Int): ImageViewData {
+        fun layerCount(layerCount: Int): Info {
             this.layerCount = layerCount
             return this
         }
-        fun mipLevels(mipLevels: Int): ImageViewData {
+        fun mipLevels(mipLevels: Int): Info {
             this.mipLevels = mipLevels
             return this
         }
-        fun viewType(viewType: Int): ImageViewData {
+        fun viewType(viewType: Int): Info {
             this.viewType = viewType
             return this
         }

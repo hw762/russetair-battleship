@@ -61,7 +61,7 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
             vkSwapChain = lp[0]
             imageViews = createImageViews(stack, device, vkSwapChain, surfaceFormat.imageFormat)
             syncSemaphoresList = Array(numImages) {
-                SyncSemaphores(device)
+                SyncSemaphores.create(device)
             }
             currentFrame = 0
         }
@@ -129,9 +129,9 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
             KHRSwapchain.vkGetSwapchainImagesKHR(device.vkDevice, swapChain, ip, swapChainImages),
             "Failed to get surface images"
         )
-        val imageViewData = ImageView.ImageViewData().format(format).aspectMask(VK13.VK_IMAGE_ASPECT_COLOR_BIT)
+        val imageViewData = ImageView.Info().format(format).aspectMask(VK13.VK_IMAGE_ASPECT_COLOR_BIT)
         result = Array(numImages) {
-            ImageView(device, swapChainImages[it], imageViewData)
+            ImageView.create(device, swapChainImages[it], imageViewData)
         }
         return result
     }
@@ -223,11 +223,14 @@ class Swapchain(device: Device, surface: Surface, window: Window, requestedImage
         val imgAcquisitionSemaphore: Semaphore,
         val renderCompleteSemaphore: Semaphore
     ) {
-        constructor(device: Device) : this(Semaphore(device), Semaphore(device))
-
         fun cleanup() {
             imgAcquisitionSemaphore.cleanup()
             renderCompleteSemaphore.cleanup()
+        }
+        companion object {
+            fun create(device: Device): SyncSemaphores {
+                return SyncSemaphores(Semaphore.create(device), Semaphore.create(device))
+            }
         }
     }
 }

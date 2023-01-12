@@ -1,10 +1,8 @@
 package gfx.vk
 
-import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.vma.Vma.*
-import org.lwjgl.util.vma.VmaAllocationCreateInfo
 import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.VK10.*
 import org.tinylog.kotlin.Logger
@@ -64,7 +62,7 @@ class VulkanTexture(
     }
 
     fun view(): ImageView {
-        return ImageView(device, image.vkImage, ImageView.ImageViewData().format(format))
+        return ImageView(device, image.vkImage, ImageView.Info().format(format))
     }
 
     override fun recordUpload(cmdBuf: VkCommandBuffer) {
