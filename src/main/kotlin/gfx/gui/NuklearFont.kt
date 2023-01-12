@@ -30,7 +30,7 @@ class NuklearFont(
         VK_FORMAT_R8_UINT, 1, 1,
         VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL
     )
-    private var fontTextureView: ImageView = fontTexture.image.view()
+    private var fontTextureView: ImageView = fontTexture.view()
     private val fontInfo = STBTTFontinfo.malloc()
     private val charData = STBTTPackedchar.malloc(95)
 

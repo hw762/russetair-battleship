@@ -63,6 +63,10 @@ class VulkanTexture(
         stagingBuf!!.unmap()
     }
 
+    fun view(): ImageView {
+        return ImageView(device, image.vkImage, ImageView.ImageViewData().format(format))
+    }
+
     override fun recordUpload(cmdBuf: VkCommandBuffer) {
         MemoryStack.stackPush().use { stack ->
             val barrier = VkImageMemoryBarrier.calloc(1, stack)

@@ -50,8 +50,4 @@ class Image(
     fun cleanup() {
         vmaDestroyImage(device.memoryAllocator.vmaAllocator, vkImage, vmaAlloc)
     }
-
-    fun view(): ImageView {
-        return ImageView(device, this, format)
-    }
 }

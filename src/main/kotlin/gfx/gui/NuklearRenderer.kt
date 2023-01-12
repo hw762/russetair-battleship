@@ -22,14 +22,14 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
         nkState.cleanup()
     }
 
-    override fun render(cmdBuf: VkCommandBuffer, outImageView: ImageView, outLayout: Int, renderArea: VkRect2D) {
+    override fun render(cmdBuf: VkCommandBuffer, outImage: Image, outImageView: ImageView, outLayout: Int, renderArea: VkRect2D) {
         beginRender(cmdBuf)
-        transitionViewLayoutToColorAttachment(cmdBuf, outImageView.image.vkImage)
+        transitionViewLayoutToColorAttachment(cmdBuf, outImage.vkImage)
         beginRendering(cmdBuf, outImageView.vkImageView, renderArea)
         vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline)
         nkState.recordRenderActivity(cmdBuf)
         endRendering(cmdBuf)
-        transitionViewLayoutToOutput(cmdBuf, outImageView.image.vkImage, outLayout)
+        transitionViewLayoutToOutput(cmdBuf, outImage.vkImage, outLayout)
         endRender(cmdBuf)
     }
 
