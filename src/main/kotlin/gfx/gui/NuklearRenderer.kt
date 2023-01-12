@@ -16,60 +16,19 @@ import org.lwjgl.vulkan.*
 
 
 class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val colorFormat: Int) {
-    private val ctx = NkContext.create()
-    private val defaultFont = NkUserFont.create()
 
-    private val cmds = NkBuffer.create()
-    private val nullTexture = NkDrawNullTexture.create()
-
-    private val vertices = VulkanBuffer(
-        device, MAX_VERTEX_BUFFER, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-    )
-    private val elements = VulkanBuffer(
-        device, MAX_ELEMENT_BUFFER, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
-    )
-    private val vkDescriptorPool: Long
-    private val projMatDescriptorSetLayout = DescriptorSetLayout.SimpleDescriptorSetLayout(
-        device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, VK_SHADER_STAGE_VERTEX_BIT
-    )
-    private val textureDescriptorSetLayout = DescriptorSetLayout.SimpleDescriptorSetLayout(
-        device, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, VK_SHADER_STAGE_FRAGMENT_BIT
-    )
-    private val vkSampler: Long
-
+    private val nkState = NuklearState(device)
     private val pipeline = NuklearPipeline(device, pipelineCache, colorFormat)
 
     init {
         MemoryStack.stackPush().use { stack ->
-            nk_init(ctx, ALLOCATOR, null)
 
-            vkDescriptorPool = createDescriptorPool(stack, device)
-
-            val samplerCI = VkSamplerCreateInfo.calloc(stack)
-                .`sType$Default`()
-                .magFilter(VK_FILTER_NEAREST)
-                .minFilter(VK_FILTER_NEAREST)
-                .mipmapMode(VK_SAMPLER_MIPMAP_MODE_NEAREST)
-                .addressModeU(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-                .addressModeV(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-                .addressModeW(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
-            vkCheck(vkCreateSampler(device.vkDevice, samplerCI, null, lp),
-                "Failed to create sampler")
-            vkSampler = lp[0]
         }
     }
 
     fun cleanup() {
-        vertices.cleanup()
-        elements.cleanup()
-        nullTexture.free()
-        defaultFont.free()
-        nk_buffer_free(cmds)
-        vkDestroyDescriptorPool(device.vkDevice, vkDescriptorPool, null)
-        vkDestroySampler(device.vkDevice, vkSampler, null)
         pipeline.cleanup()
+        nkState.cleanup()
     }
 
     fun render(cmdBuf: VkCommandBuffer) {
@@ -158,43 +117,9 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
     }
 
     companion object {
-        private const val MAX_VERTEX_BUFFER = 512 * 1024L
-        private const val MAX_ELEMENT_BUFFER = 128 * 1024L
-        private const val MAX_TEXTURES = 128
 
-        private val ALLOCATOR: NkAllocator = NkAllocator.create()
-            .alloc { handle: Long, old: Long, size: Long ->
-                nmemAllocChecked(
-                    size
-                )
-            }
-            .mfree { handle: Long, ptr: Long -> nmemFree(ptr) }
-        private val VERTEX_LAYOUT: NkDrawVertexLayoutElement.Buffer = NkDrawVertexLayoutElement.create(4)
-            .position(0).attribute(NK_VERTEX_POSITION).format(NK_FORMAT_FLOAT).offset(0)
-            .position(1).attribute(NK_VERTEX_TEXCOORD).format(NK_FORMAT_FLOAT).offset(8)
-            .position(2).attribute(NK_VERTEX_COLOR).format(NK_FORMAT_R8G8B8A8).offset(16)
-            .position(3).attribute(NK_VERTEX_ATTRIBUTE_COUNT).format(NK_FORMAT_COUNT).offset(0)
-            .flip();
 
-        fun createDescriptorPool(stack: MemoryStack, device: Device): Long {
-            val poolSizes = VkDescriptorPoolSize.calloc(2, stack)
-            poolSizes[0]
-                .type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-                .descriptorCount(1)
-            poolSizes[1]
-                .type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-                .descriptorCount(MAX_TEXTURES)
 
-            val descriptorPoolCI = VkDescriptorPoolCreateInfo.calloc(stack)
-                .`sType$Default`()
-                .maxSets(MAX_TEXTURES + 1)
-                .pPoolSizes(poolSizes)
-            val lp = stack.mallocLong(1)
-            vkCheck(
-                vkCreateDescriptorPool(device.vkDevice, descriptorPoolCI, null, lp),
-                "Failed to create descriptor pool"
-            )
-            return lp[0]
-        }
+
     }
 }

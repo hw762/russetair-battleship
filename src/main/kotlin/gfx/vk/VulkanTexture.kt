@@ -17,6 +17,8 @@ class VulkanTexture(
 ) {
     val vkImage: Long
     val vmaAlloc: Long
+    var loaded: Boolean = false
+        private set
     private var stagingBuf: VulkanBuffer? = null
 
     init {
@@ -51,7 +53,7 @@ class VulkanTexture(
     }
 
     fun cleanup() {
-        cleanupStagingBuffer()
+        finalizeAfterSubmit()
         vmaDestroyImage(device.memoryAllocator.vmaAllocator, vkImage, vmaAlloc)
     }
 
@@ -59,7 +61,9 @@ class VulkanTexture(
      * Allocate and map staging buffer
      */
     fun prepareStagingBuffer() {
-        if (stagingBuf == null) {
+        assert(!loaded) { "Texture already loaded" }
+        loaded = false
+        if (stagingBuf != null) {
             return
         }
         val size = width.toLong() * height.toLong() * channels.toLong()
@@ -71,16 +75,19 @@ class VulkanTexture(
     }
 
     /**
-     * Load pixel data
+     * Load pixel data to staging buffer
      */
-    fun loadPixels(cmdBuf: VkCommandBuffer, pixels: ByteBuffer) {
+    fun loadPixels(pixels: ByteBuffer) {
+        assert(!loaded && stagingBuf != null)
         val size = width.toLong() * height.toLong() * channels.toLong()
         assert(size <= pixels.remaining())
         // Copy to staging buffer
         MemoryUtil.memByteBuffer(stagingBuf!!.map(), size.toInt()).put(pixels)
         stagingBuf!!.unmap()
-        // Transfer TODO: actually transfer
-        MemoryStack.stackPush().use {stack ->
+    }
+
+    fun recordCommands(cmdBuf: VkCommandBuffer) {
+        MemoryStack.stackPush().use { stack ->
             val barrier = VkImageMemoryBarrier.calloc(1, stack)
                 .`sType$Default`()
                 .srcAccessMask(0)
@@ -88,40 +95,49 @@ class VulkanTexture(
                 .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
                 .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
                 .image(vkImage)
-                .subresourceRange(VkImageSubresourceRange.calloc(stack)
-                    .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                    .baseMipLevel(0)
-                    .levelCount(1)
-                    .baseArrayLayer(0)
-                    .layerCount(1))
-            vkCmdPipelineBarrier(cmdBuf,
+                .subresourceRange(
+                    VkImageSubresourceRange.calloc(stack)
+                        .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                        .baseMipLevel(0)
+                        .levelCount(1)
+                        .baseArrayLayer(0)
+                        .layerCount(1)
+                )
+            vkCmdPipelineBarrier(
+                cmdBuf,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                0, null, null, barrier)
+                0, null, null, barrier
+            )
             val copyRegion = VkBufferImageCopy.calloc(1, stack)
-                .imageSubresource(VkImageSubresourceLayers.calloc(stack)
-                    .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
-                    .baseArrayLayer(0)
-                    .layerCount(1)
-                    .mipLevel(0)
+                .imageSubresource(
+                    VkImageSubresourceLayers.calloc(stack)
+                        .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
+                        .baseArrayLayer(0)
+                        .layerCount(1)
+                        .mipLevel(0)
                 )
                 .imageExtent(VkExtent3D.calloc(stack).width(width).height(height).depth(1))
-            vkCmdCopyBufferToImage(cmdBuf, stagingBuf!!.buffer, vkImage,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copyRegion)
+            vkCmdCopyBufferToImage(
+                cmdBuf, stagingBuf!!.buffer, vkImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copyRegion
+            )
             barrier
                 .srcAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT)
                 .dstAccessMask(VK_ACCESS_SHADER_READ_BIT)
                 .oldLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
                 .newLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            vkCmdPipelineBarrier(cmdBuf,
+            vkCmdPipelineBarrier(
+                cmdBuf,
                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                null, null, barrier)
+                null, null, barrier
+            )
         }
     }
 
     /**
-     * Clean up staging buffer
+     * Finalize after record
      */
-    fun cleanupStagingBuffer() {
+    fun finalizeAfterSubmit() {
         if (stagingBuf == null) {
             return
         }
