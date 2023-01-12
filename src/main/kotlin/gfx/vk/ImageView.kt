@@ -7,14 +7,14 @@ import org.lwjgl.vulkan.VkComponentMapping
 import org.lwjgl.vulkan.VkImageSubresourceRange
 import org.lwjgl.vulkan.VkImageViewCreateInfo
 
-class ImageView(private val device: Device, vkImage: Long, format: Int) {
+class ImageView(private val device: Device, val image: Image, format: Int) {
     val vkImageView: Long
 
     init {
         MemoryStack.stackPush().use { stack ->
             val ci = VkImageViewCreateInfo.calloc(stack)
                 .`sType$Default`()
-                .image(vkImage)
+                .image(image.vkImage)
                 .viewType(VK_IMAGE_VIEW_TYPE_2D)
                 .format(format)
                 .components(VkComponentMapping.calloc(stack)

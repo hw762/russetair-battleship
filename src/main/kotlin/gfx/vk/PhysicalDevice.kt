@@ -94,7 +94,7 @@ class PhysicalDevice(vkPhysicalDevice: VkPhysicalDevice) {
     }
 
     companion object {
-        fun createPhysicalDevice(instance: Instance, preferredDeviceName: String?): PhysicalDevice {
+        fun createPhysicalDevice(instance: Instance, preferredDeviceName: String?=null): PhysicalDevice {
             Logger.debug("Selecting physical devices")
             var selectedPhysicalDevice: PhysicalDevice? = null
             MemoryStack.stackPush().use { stack ->

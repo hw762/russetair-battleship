@@ -5,6 +5,7 @@ import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.KHRDynamicRendering.VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+import org.lwjgl.vulkan.KHRPortabilitySubset.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 import org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME
 import org.lwjgl.vulkan.VK10.vkCreateDevice
 import org.tinylog.kotlin.Logger
@@ -50,6 +51,7 @@ class Device(instance: Instance, physicalDevice: PhysicalDevice) {
             val extensions = listOf(
                 VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                 VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+                VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
             )
             val requiredExtensions = stringsToPointerBuffer(stack, extensions)
             // Set up required features
@@ -70,13 +72,12 @@ class Device(instance: Instance, physicalDevice: PhysicalDevice) {
                     .queueFamilyIndex(i)
                     .pQueuePriorities(priorities)
             }
-            val deviceCreateInfo = VkDeviceCreateInfo.calloc(stack)
+            return VkDeviceCreateInfo.calloc(stack)
                 .`sType$Default`()
                 .pNext(dynamicRendering)
                 .ppEnabledExtensionNames(requiredExtensions)
                 .pEnabledFeatures(features)
                 .pQueueCreateInfos(queueCreationInfoBuf)
-            return deviceCreateInfo
         }
     }
 }

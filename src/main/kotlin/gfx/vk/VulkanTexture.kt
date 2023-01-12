@@ -18,46 +18,20 @@ class VulkanTexture(
     val width: Int, val height: Int, val channels: Int, val format: Int,
     val mipLevels: Int, val arrayLayers: Int, val samples: Int, val tiling: Int
 ) : UploadActivity {
-    val vkImage: Long
-    val vmaAlloc: Long
-    var loaded: Boolean = false
+    val image: Image
+
+    private var loaded: Boolean = false
         private set
     private var stagingBuf: VulkanBuffer? = null
 
     init {
         Logger.debug("Creating VulkanTexture")
-        MemoryStack.stackPush().use { stack ->
-            val imageCI = VkImageCreateInfo.calloc(stack)
-                .`sType$Default`()
-                .imageType(VK_IMAGE_TYPE_2D)
-                .format(format)
-                .extent(VkExtent3D.malloc(stack).width(width).height(height))
-                .mipLevels(mipLevels)
-                .arrayLayers(arrayLayers)
-                .samples(samples)
-                .tiling(tiling)
-                .usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT or VK_IMAGE_USAGE_SAMPLED_BIT)
-                .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
-                .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            val allocCI = VmaAllocationCreateInfo.calloc(stack)
-                .usage(VMA_MEMORY_USAGE_AUTO)
-            val pImage = stack.mallocLong(1)
-            val pAlloc = stack.mallocPointer(1)
-            vkCheck(
-                vmaCreateImage(
-                    device.memoryAllocator.vmaAllocator,
-                    imageCI, allocCI, pImage, pAlloc, null
-                ),
-                "Failed to create image"
-            )
-            vkImage = pImage[0]
-            vmaAlloc = pAlloc[0]
-        }
+        image = Image(device, width, height, channels, format, mipLevels, arrayLayers, samples, tiling)
     }
 
     fun cleanup() {
         cleanupStagingBuffer()
-        vmaDestroyImage(device.memoryAllocator.vmaAllocator, vkImage, vmaAlloc)
+        image.cleanup()
     }
 
     /**
@@ -97,7 +71,7 @@ class VulkanTexture(
                 .dstAccessMask(VK_ACCESS_TRANSFER_WRITE_BIT)
                 .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
                 .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-                .image(vkImage)
+                .image(image.vkImage)
                 .subresourceRange(
                     VkImageSubresourceRange.calloc(stack)
                         .aspectMask(VK_IMAGE_ASPECT_COLOR_BIT)
@@ -121,7 +95,7 @@ class VulkanTexture(
                 )
                 .imageExtent(VkExtent3D.calloc(stack).width(width).height(height).depth(1))
             vkCmdCopyBufferToImage(
-                cmdBuf, stagingBuf!!.buffer, vkImage,
+                cmdBuf, stagingBuf!!.buffer, image.vkImage,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copyRegion
             )
             barrier
@@ -150,9 +124,5 @@ class VulkanTexture(
         }
         stagingBuf!!.cleanup()
         stagingBuf = null
-    }
-
-    fun view(): ImageView {
-        return ImageView(device, vkImage, format)
     }
 }

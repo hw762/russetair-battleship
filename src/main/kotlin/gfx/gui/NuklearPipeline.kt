@@ -14,7 +14,6 @@ class NuklearPipeline(private val device: Device,
     val vkPipeline: Long
     private val vertexShader: ShaderProgram
     private val fragmentShader: ShaderProgram
-    private val renderPass = NuklearRenderPass(device, colorFormat)
 
     init {
         ShaderCompiler.compileShaderIfChanged(NK_VERTEX_SHADER_FILE_GLSL, Shaderc.shaderc_glsl_vertex_shader)
@@ -92,8 +91,14 @@ class NuklearPipeline(private val device: Device,
             val dynamicStateCI = VkPipelineDynamicStateCreateInfo.calloc(stack)
                 .`sType$Default`()
                 .pDynamicStates(stack.ints(VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR))
+            val pColorFormats = stack.mallocInt(1)
+            pColorFormats.put(0, colorFormat)
+            val renderingCI = VkPipelineRenderingCreateInfo.calloc(stack)
+                .`sType$Default`()
+                .pColorAttachmentFormats(pColorFormats)
             val pipelineCIs = VkGraphicsPipelineCreateInfo.calloc(1, stack)
                 .`sType$Default`()
+                .pNext(renderingCI)
                 .pStages(shaderStages)
                 .pVertexInputState(vertexInputStateCI)
                 .pInputAssemblyState(inputAssemblyStateCI)
@@ -102,7 +107,6 @@ class NuklearPipeline(private val device: Device,
                 .pMultisampleState(multisampleStateCI)
                 .pColorBlendState(colorBlendState)
                 .pDynamicState(dynamicStateCI)
-                .renderPass(renderPass.vkRenderPass)
             val lp = stack.mallocLong(1)
             vkCheck(
                 vkCreateGraphicsPipelines(device.vkDevice, pipelineCache.vkPipelineCache, pipelineCIs, null, lp),
@@ -115,7 +119,6 @@ class NuklearPipeline(private val device: Device,
     fun cleanup() {
         vertexShader.cleanup()
         fragmentShader.cleanup()
-        renderPass.cleanup()
         vkDestroyPipeline(device.vkDevice, vkPipeline, null)
     }
 
