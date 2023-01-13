@@ -4,6 +4,8 @@ import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.PointerBuffer
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.vulkan.*
+import org.lwjgl.vulkan.VK10.*
+import org.lwjgl.vulkan.VK11.vkGetPhysicalDeviceProperties2
 import org.tinylog.kotlin.Logger
 
 class PhysicalDevice(vkPhysicalDevice: VkPhysicalDevice) {
@@ -24,16 +26,16 @@ class PhysicalDevice(vkPhysicalDevice: VkPhysicalDevice) {
 
             // Get device properties
             vkPhysicalDeviceProperties = VkPhysicalDeviceProperties.calloc()
-            VK13.vkGetPhysicalDeviceProperties(vkPhysicalDevice, vkPhysicalDeviceProperties)
+            vkGetPhysicalDeviceProperties(vkPhysicalDevice, vkPhysicalDeviceProperties)
 
             // Get extensions
             vkCheck(
-                VK13.vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, null as String?, intBuffer, null),
+                vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, null as String?, intBuffer, null),
                 "Failed to get number of device extension properties"
             )
             vkDeviceExtensions = VkExtensionProperties.calloc(intBuffer[0])
             vkCheck(
-                VK13.vkEnumerateDeviceExtensionProperties(
+                vkEnumerateDeviceExtensionProperties(
                     vkPhysicalDevice,
                     null as String?,
                     intBuffer,
@@ -43,16 +45,17 @@ class PhysicalDevice(vkPhysicalDevice: VkPhysicalDevice) {
             )
 
             // Get queue family properties
-            VK13.vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, intBuffer, null)
+            vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, intBuffer, null)
             vkQueueFamilyProps = VkQueueFamilyProperties.calloc(intBuffer.get(0))
-            VK13.vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, intBuffer, vkQueueFamilyProps)
+            vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, intBuffer, vkQueueFamilyProps)
 
             vkPhysicalDeviceFeatures = VkPhysicalDeviceFeatures.calloc()
-            VK13.vkGetPhysicalDeviceFeatures(vkPhysicalDevice, vkPhysicalDeviceFeatures)
+            vkGetPhysicalDeviceFeatures(vkPhysicalDevice, vkPhysicalDeviceFeatures)
 
             // Get Memory information and properties
             vkMemoryProperties = VkPhysicalDeviceMemoryProperties.calloc()
-            VK13.vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, vkMemoryProperties)
+            vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, vkMemoryProperties)
+            // TODO: Check for dynamic rendering
         }
     }
 
@@ -138,14 +141,14 @@ class PhysicalDevice(vkPhysicalDevice: VkPhysicalDevice) {
             val pPhysicalDevices: PointerBuffer
             val intBuffer = stack.mallocInt(1)
             vkCheck(
-                VK13.vkEnumeratePhysicalDevices(instance.vkInstance, intBuffer, null),
+                vkEnumeratePhysicalDevices(instance.vkInstance, intBuffer, null),
                 "Failed to get number of physical devices"
             )
             val numDevices = intBuffer[0]
             Logger.debug("Detected {} physical device(s)", numDevices)
             pPhysicalDevices = stack.mallocPointer(numDevices)
             vkCheck(
-                VK13.vkEnumeratePhysicalDevices(instance.vkInstance, intBuffer, pPhysicalDevices),
+                vkEnumeratePhysicalDevices(instance.vkInstance, intBuffer, pPhysicalDevices),
                 "Failed to get physical devices"
             )
             return pPhysicalDevices

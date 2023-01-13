@@ -24,7 +24,9 @@ class VulkanTexture(
 
     init {
         Logger.debug("Creating VulkanTexture")
-        image = Image(device, width, height, channels, format, mipLevels, arrayLayers, samples, tiling)
+        // TODO: Separate managed images and unmanaged ones
+        val info = Image.Info(width, height, channels, format, mipLevels, arrayLayers, samples, tiling)
+        image = Image.create(device, info)
     }
 
     fun cleanup() {
@@ -62,7 +64,7 @@ class VulkanTexture(
     }
 
     fun view(): ImageView {
-        return ImageView(device, image.vkImage, ImageView.Info().format(format))
+        return ImageView.create(device, image.vkImage, ImageView.Info().format(format))
     }
 
     override fun recordUpload(cmdBuf: VkCommandBuffer) {

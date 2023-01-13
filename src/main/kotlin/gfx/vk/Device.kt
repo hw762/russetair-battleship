@@ -7,8 +7,9 @@ import org.lwjgl.vulkan.*
 import org.lwjgl.vulkan.KHRDynamicRendering.VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 import org.lwjgl.vulkan.KHRPortabilitySubset.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
 import org.lwjgl.vulkan.KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME
-import org.lwjgl.vulkan.VK10.vkCreateDevice
+import org.lwjgl.vulkan.VK10.*
 import org.tinylog.kotlin.Logger
+
 
 class Device(instance: Instance, physicalDevice: PhysicalDevice) {
     val physicalDevice: PhysicalDevice
@@ -34,11 +35,43 @@ class Device(instance: Instance, physicalDevice: PhysicalDevice) {
     fun cleanup() {
         Logger.debug("Destroying Vulkan device")
         memoryAllocator.cleanup()
-        VK13.vkDestroyDevice(vkDevice, null)
+        vkDestroyDevice(vkDevice, null)
     }
 
     fun waitIdle() {
-        VK13.vkDeviceWaitIdle(vkDevice)
+        vkDeviceWaitIdle(vkDevice)
+    }
+
+    fun getPresentQueueFamilyIndex(surface: Surface): Int {
+        var index = -1
+        MemoryStack.stackPush().use { stack ->
+            val queuePropsBuff = physicalDevice.vkQueueFamilyProps
+            val numQueuesFamilies = queuePropsBuff.capacity()
+            val intBuff = stack.mallocInt(1)
+            for (i in 0 until numQueuesFamilies) {
+                KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(
+                    physicalDevice.vkPhysicalDevice,
+                    i, surface.vkSurface, intBuff
+                )
+                val supportsPresentation = intBuff[0] == VK_TRUE
+                if (supportsPresentation) {
+                    index = i
+                    break
+                }
+            }
+        }
+        if (index < 0) {
+            throw RuntimeException("Failed to get Presentation Queue family index")
+        }
+        return index
+    }
+
+    fun getQueue(queueFamilyIndex: Int): VkQueue {
+        MemoryStack.stackPush().use { stack ->
+            val lp = stack.mallocPointer(1)
+            vkGetDeviceQueue(vkDevice, queueFamilyIndex, 0, lp)
+            return VkQueue(lp[0], vkDevice)
+        }
     }
 
     companion object {
@@ -48,11 +81,13 @@ class Device(instance: Instance, physicalDevice: PhysicalDevice) {
             physicalDevice: PhysicalDevice
         ): VkDeviceCreateInfo {
             // Required extensions
-            val extensions = listOf(
+            val extensions = mutableListOf(
                 VK_KHR_SWAPCHAIN_EXTENSION_NAME,
                 VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-                VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
             )
+            if (System.getProperty("os.name").lowercase().contains("mac")) {
+                extensions.add(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)
+            }
             val requiredExtensions = stringsToPointerBuffer(stack, extensions)
             // Set up required features
             val dynamicRendering = VkPhysicalDeviceDynamicRenderingFeatures.calloc(stack)

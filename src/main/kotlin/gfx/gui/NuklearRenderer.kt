@@ -1,7 +1,6 @@
 package gfx.gui
 
 
-import gfx.Renderer
 import gfx.vk.*
 import gfx.vk.VulkanUtils.Companion.vkCheck
 import org.lwjgl.system.MemoryStack
@@ -11,8 +10,7 @@ import org.lwjgl.vulkan.VK13.vkCmdBeginRendering
 import org.lwjgl.vulkan.VK13.vkCmdEndRendering
 
 
-class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val colorFormat: Int)
-    : Renderer {
+class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val colorFormat: Int) {
 
     private val nkState = NuklearState(device)
     private val pipeline = NuklearPipeline(device, pipelineCache, colorFormat)
@@ -22,14 +20,14 @@ class NuklearRenderer(val device: Device, val pipelineCache: PipelineCache, val 
         nkState.cleanup()
     }
 
-    override fun render(cmdBuf: VkCommandBuffer, outImage: Image, outImageView: ImageView, outLayout: Int, renderArea: VkRect2D) {
+    fun render(cmdBuf: VkCommandBuffer, outVkImage: Long, outImageView: ImageView, outLayout: Int, renderArea: VkRect2D) {
         beginRender(cmdBuf)
-        transitionViewLayoutToColorAttachment(cmdBuf, outImage.vkImage)
+        transitionViewLayoutToColorAttachment(cmdBuf, outVkImage)
         beginRendering(cmdBuf, outImageView.vkImageView, renderArea)
         vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vkPipeline)
         nkState.recordRenderActivity(cmdBuf)
         endRendering(cmdBuf)
-        transitionViewLayoutToOutput(cmdBuf, outImage.vkImage, outLayout)
+        transitionViewLayoutToOutput(cmdBuf, outVkImage, outLayout)
         endRender(cmdBuf)
     }
 

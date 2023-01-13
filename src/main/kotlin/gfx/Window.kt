@@ -11,7 +11,7 @@ class Window(title: String, keyCallback: GLFWKeyCallbackI? = null) {
     var height: Int private set
     var width: Int private set
     val mouseInput: MouseInput
-    var resized: Boolean
+    private var resized: Boolean
     var windowHandle: Long private set
 
     init {
@@ -52,6 +52,18 @@ class Window(title: String, keyCallback: GLFWKeyCallbackI? = null) {
         glfwFreeCallbacks(windowHandle)
         glfwDestroyWindow(windowHandle)
         glfwTerminate()
+    }
+
+    fun isResized(): Boolean {
+        return resized
+    }
+
+    fun setResized(resized: Boolean) {
+        this.resized = resized
+    }
+
+    fun resetResized() {
+        resized = false
     }
 
     fun isKeyPressed(keycode: Int): Boolean {
