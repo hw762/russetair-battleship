@@ -12,6 +12,9 @@ import org.lwjgl.stb.STBTruetype.stbtt_GetCodepointHMetrics
 import org.lwjgl.stb.STBTruetype.stbtt_GetPackedQuad
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
+import org.lwjgl.system.jemalloc.JEmalloc
+import org.lwjgl.system.jemalloc.JEmalloc.je_free
+import org.lwjgl.system.jemalloc.JEmalloc.je_malloc
 import org.lwjgl.vulkan.VK10.*
 import org.lwjgl.vulkan.VkCommandBuffer
 import java.io.File
@@ -38,7 +41,7 @@ class NuklearFont(
         MemoryStack.stackPush().use { stack ->
             // Read the font
             val ttfBytes = File(path).readBytes()
-            val ttf = stack.malloc(ttfBytes.size)
+            val ttf = JEmalloc.je_malloc(ttfBytes.size.toLong())!!
             ttf.put(ttfBytes)
             ttf.flip()
             // Initialize
@@ -51,11 +54,13 @@ class NuklearFont(
             val bitmap = packFont(stack, ttf)
             fontTexture.prepareStagingBuffer()
             fontTexture.loadPixels(bitmap)
+            je_free(bitmap)
             nkFont
                 .width { _, _, text, len -> calcTextWidth(fontInfo, text, len, scale) }
                 .height(fontHeight)
                 .query { _, _, glyph, codepoint, _ -> fontQuery(codepoint, glyph, descent, scale) }
                 .texture { it.ptr(fontTextureView.vkImageView) }
+            JEmalloc.je_free(ttf)
         }
 
     }
@@ -69,7 +74,7 @@ class NuklearFont(
     }
 
     private fun packFont(stack: MemoryStack, ttf: ByteBuffer): ByteBuffer {
-        val bitmap = stack.malloc(bitmapW * bitmapH)
+        val bitmap = je_malloc(bitmapW.toLong() * bitmapH.toLong())!!
         val pc = STBTTPackContext.malloc(stack)
         STBTruetype.stbtt_PackBegin(
             pc,

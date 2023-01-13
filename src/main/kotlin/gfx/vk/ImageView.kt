@@ -36,7 +36,7 @@ class ImageView private constructor(val device: Device, val vkImageView: Long, v
     }
 
     data class Info(
-        var aspectMask: Int = 0,
+        var aspectMask: Int = VK_IMAGE_ASPECT_COLOR_BIT,
         var baseArrayLayer: Int = 0,
         var format: Int = 0,
         var layerCount: Int = 1,

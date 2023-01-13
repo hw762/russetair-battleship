@@ -4,9 +4,7 @@ import org.lwjgl.system.MemoryStack
 import org.lwjgl.util.vma.Vma
 import org.lwjgl.util.vma.Vma.vmaDestroyImage
 import org.lwjgl.util.vma.VmaAllocationCreateInfo
-import org.lwjgl.vulkan.VK10
-import org.lwjgl.vulkan.VK10.VK_IMAGE_TILING_OPTIMAL
-import org.lwjgl.vulkan.VK10.VK_SAMPLE_COUNT_1_BIT
+import org.lwjgl.vulkan.VK10.*
 import org.lwjgl.vulkan.VkExtent3D
 import org.lwjgl.vulkan.VkImageCreateInfo
 
@@ -22,16 +20,16 @@ class Image private constructor(
             MemoryStack.stackPush().use { stack ->
                 val imageCI = VkImageCreateInfo.calloc(stack)
                     .`sType$Default`()
-                    .imageType(VK10.VK_IMAGE_TYPE_2D)
+                    .imageType(VK_IMAGE_TYPE_2D)
                     .format(info.format)
-                    .extent(VkExtent3D.malloc(stack).width(info.width).height(info.height))
+                    .extent(VkExtent3D.malloc(stack).width(info.width).height(info.height).depth(1))
                     .mipLevels(info.mipLevels)
                     .arrayLayers(info.arrayLayers)
                     .samples(info.samples)
                     .tiling(info.tiling)
-                    .usage(VK10.VK_IMAGE_USAGE_TRANSFER_DST_BIT or VK10.VK_IMAGE_USAGE_SAMPLED_BIT)
-                    .sharingMode(VK10.VK_SHARING_MODE_EXCLUSIVE)
-                    .initialLayout(VK10.VK_IMAGE_LAYOUT_UNDEFINED)
+                    .usage(VK_IMAGE_USAGE_TRANSFER_DST_BIT or VK_IMAGE_USAGE_SAMPLED_BIT)
+                    .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
+                    .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
                 val allocCI = VmaAllocationCreateInfo.calloc(stack)
                     .usage(Vma.VMA_MEMORY_USAGE_AUTO)
                 val pImage = stack.mallocLong(1)
