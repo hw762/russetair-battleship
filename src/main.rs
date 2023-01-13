@@ -13,7 +13,7 @@ use winit::{
 };
 
 use ultraviolet::*;
-use ultraviolet::projection::perspective_wgpu_dx;
+use ultraviolet::projection::{perspective_reversed_infinite_z_wgpu_dx_gl};
 
 // Example code modified from https://github.com/gfx-rs/wgpu-rs/tree/master/examples/cube
 #[repr(C)]
@@ -106,8 +106,8 @@ struct Example {
 
 impl Example {
     fn generate_matrix(aspect_ratio: f32) -> Mat4 {
-        let mx_projection = perspective_wgpu_dx(
-            45f32 / 180f32 * PI, aspect_ratio, 1f32, 10f32);
+        let mx_projection = perspective_reversed_infinite_z_wgpu_dx_gl(
+            45f32 / 180f32 * PI, aspect_ratio, 0.01f32);
         let mx_view = Mat4::look_at(
             Vec3::new(1.5f32, -5.0, 3.0),
             Vec3::new(0f32, 0.0, 0.0),
@@ -176,7 +176,7 @@ impl Example {
         // Create the texture
         let size = 256u32;
         let texels = create_texels(size as usize);
-        let texture_extent = wgpu::Extent3d {
+        let texture_extent = Extent3d {
             width: size,
             height: size,
             depth_or_array_layers: 1,
@@ -373,7 +373,7 @@ fn main() {
     surface.configure(&device, &surface_desc);
 
     // Set up dear imgui
-    let mut imgui = imgui::Context::create();
+    let mut imgui = Context::create();
     let mut platform = imgui_winit_support::WinitPlatform::init(&mut imgui);
     platform.attach_window(
         imgui.io_mut(),
@@ -386,7 +386,7 @@ fn main() {
     imgui.io_mut().font_global_scale = (1.0 / hidpi_factor) as f32;
 
     imgui.fonts().add_font(&[FontSource::DefaultFontData {
-        config: Some(imgui::FontConfig {
+        config: Some(FontConfig {
             oversample_h: 1,
             pixel_snap_h: true,
             size_pixels: font_size,
@@ -422,7 +422,7 @@ fn main() {
     // also as a texture view for rendering into it
 
     let texture_config = TextureConfig {
-        size: wgpu::Extent3d {
+        size: Extent3d {
             width: example_size[0] as u32,
             height: example_size[1] as u32,
             ..Default::default()
@@ -512,7 +512,7 @@ fn main() {
                     .size([512.0, 512.0], Condition::FirstUseEver)
                     .build(|| {
                         new_example_size = Some(ui.content_region_avail());
-                        imgui::Image::new(example_texture_id, new_example_size.unwrap()).build(&ui);
+                        Image::new(example_texture_id, new_example_size.unwrap()).build(&ui);
                     });
 
                 if let Some(size) = new_example_size {
